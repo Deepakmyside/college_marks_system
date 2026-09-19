@@ -4,7 +4,7 @@ const getStudents = async (req, res) => {
     try{
         const { branchId, semesterId, section } = req.query;
 
-        const  students = await prisma.students.findMany({
+        const  students = await prisma.student.findMany({
             where: {
                 branchId: Number(branchId),
                 semesterId: Number(semesterId),

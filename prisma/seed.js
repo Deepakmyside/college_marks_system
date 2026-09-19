@@ -1,52 +1,57 @@
-const { prismaClient } = require("@prisma/client")
+const { PrismaClient } = require("../src/generated/prisma")
 
-const prisma = new prismaClient();
+const prisma = new PrismaClient();
 
 async function main() {
     console.log("Seeding database....");
 
-    const aiml = await prisma.branch.create({
-        data: {
-            name: "AIML",
-        }
+    const aiml = await prisma.branch.upsert({
+        where: {  name: "AIML" },
+        update: {},
+        create: {name: "AIML"}
     })
 
-     const cse = await prisma.branch.create({
-        data: {
-            name: "CSE",
-        }
+      const cse = await prisma.branch.upsert({
+        where: {  name: "CSE" },
+        update: {},
+        create: {name: "CSE"}
     })
 
-     const iot = await prisma.branch.create({
-        data: {
-            name: "IOT",
-        }
-    })
-
-    const sem3 = await prisma.branch.create({
-        data:{
-            number: 3,
-        }
-    })
-
-     const sem4 = await prisma.branch.create({
-        data:{
-            number: 4,
-        }
+      const iot = await prisma.branch.upsert({
+        where: {  name: "IOT" },
+        update: {},
+        create: {name: "IOT"}
     })
 
 
-    const teacher = await prisma.branch.create({
-        data: {
+    const sem3 = await prisma.semester.upsert({
+        where: { number: 3 },
+        update: {},
+        create: {number: 3 }
+    })
+
+    const sem4 = await prisma.semester.upsert({
+        where: { number: 4 },
+        update: {},
+        create: {number: 4 }
+    })
+
+
+    const teacher = await prisma.user.upsert({
+        where: {email: "teacher@college.com"},
+        update:{},
+        create: {
             name: "Rahul Teacher",
             email:"teacher@college.com",
             passwordHash: "dummy-password",
             role: "TEACHER",
         }
-    }),
+    })
 
-    const hod = await prisma.branch.create({
-        data: {
+    const hod = await prisma.user.upsert({
+        where: { email: "hod@college.com"},
+        update:{},
+        create: {
             name: "Amit HOD",
             email: "hod@college.com",
             passwordHash: "dummy-password",
@@ -56,8 +61,10 @@ async function main() {
 
     console.log("User created.");
 
-    const student1 = await prisma.student.create({
-        data: {
+    const student1 = await prisma.student.upsert({
+        where: { uid: "AIML001" },
+        update: {},
+        create: {
             uid : "AIML001",
             name: "Rahul tewatia",
             batch: "2024-28",
@@ -68,8 +75,10 @@ async function main() {
     });
 
     
-    const student2 = await prisma.student.create({
-        data: {
+    const student2 = await prisma.student.upsert({
+           where: { uid: "AIML002" },
+        update: {},
+        create: {
             uid : "AIML002",
             name: "Aman tirth",
             batch: "2024-28",
@@ -79,8 +88,10 @@ async function main() {
         },
     })
 
-    const student3 = await prisma.student.create({
-        data: {
+    const student3 = await prisma.student.upsert({
+          where: { uid: "AIML003" },
+        update: {},
+        create: {
             uid: "AIML003",
             name: "Ajay bhandaria",
             batch: "2024-28",
@@ -90,8 +101,10 @@ async function main() {
         },
     });
 
-    const student4 = await prisma.student.create({
-          data: {
+    const student4 = await prisma.student.upsert({
+            where: { uid: "CSE001" },
+        update: {},
+        create: {
           uid: "CSE001",
           name: "Arjun Kumar",
           batch: "2024-28",
@@ -124,7 +137,7 @@ async function main() {
         name:"Mathematics",
         branchId: aiml.id,
         semesterId: sem4.id
-        };
+        }
     });
 
    const csedbms = await  prisma.subject.create({
@@ -149,7 +162,7 @@ async function main() {
 
    console.log("Mark session created")
 
- const assessments = await prisma.assessment.create({
+ const assessments = await prisma.assessment.createMany({
     data: [
         {
             markSessionId: markSession.id,
@@ -158,7 +171,7 @@ async function main() {
         },
         {
             markSessionId: markSession.id,
-            studentId: student1,
+            studentId: student2.id,
             marks:9,
         },
     ],
