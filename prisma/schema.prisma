@@ -8,81 +8,86 @@ datasource db {
 }
 
 model User {
-  id            Int   @id @default(autoincrement())
-  name          String
-  email         String @unique
-  passwordHash  String
-  role          String 
-  markSessions  MarkSession[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         String
+  markSessions MarkSession[]
 }
+
 model Branch {
-  id        Int @id @unique(autoincrement())
-  name      String @unique
-  students  Student[]
-  subjects  Subject[]
-  markSessions  MarkSession[]
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  students     Student[]
+  subjects     Subject[]
+  markSessions MarkSession[]
 }
 
 model Semester {
-  id       Int   @id @unique(autoincrement())
-  number   Int   @unique
-  students Student[]
-  subjects Subject[]
-  markSessions  MarkSession[]
+  id           Int           @id @default(autoincrement())
+  number       Int           @unique
+  students     Student[]
+  subjects     Subject[]
+  markSessions MarkSession[]
 }
 
 model Student {
-  id           Int @id @unique(autoincrement())
-  uid          String @unique
-  name         String
-  batch        String
-  section      String
+  id      Int    @id @default(autoincrement())
+  uid     String @unique
+  name    String
+  batch   String
+  section String
 
-  branchId     Int
-  semesterId   Int
+  branchId   Int
+  semesterId Int
 
-  branch       Branch   @relation(fields: [branchId], refrences: [id])
-  semester     Semester @relation(fields: [semesterId], refrences: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+  semester Semester @relation(fields: [semesterId], references: [id])
 
-  assessments Assessments[]
+  assessments Assessment[]
 }
 
 model Subject {
-  id         Int @id @default(autoincrement())
-  name       String 
-  branchId   Int
-  semesterId Int
-  markSessions  MarkSession[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  branchId     Int
+  semesterId   Int
+  markSessions MarkSession[]
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  semester Semester @relation(fields: [semesterId], references: [id])
 }
 
 model MarkSession {
-  id          Int   @id @default(autoincrement())
-  teacherId   Int   
-  subjectId   Int
-  branchId    Int
-  semesterId  Int
-  section     String
-  date        DateTime
+  id         Int      @id @default(autoincrement())
+  teacherId  Int
+  subjectId  Int
+  branchId   Int
+  semesterId Int
+  section    String
+  date       DateTime
 
-  teacher   User     @relation(fields:   [teacherId], refrences: [id])
-  subject   Subject  @relation(fields:   [subjectId], refrences: [id])
-  branch    Branch   @relation(fields:   [branchId], refrences: [id])
-  semester  Semester @relation(fields:   [semesterId], refrences: [id])
+  teacher  User     @relation(fields: [teacherId], references: [id])
+  subject  Subject  @relation(fields: [subjectId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+  semester Semester @relation(fields: [semesterId], references: [id])
 
-assessments Assessments[]
+  assessments Assessment[]
 
-@@unique([subjectId, branchId, semesterId, section, date])
-
+  @@unique([subjectId, branchId, semesterId, section, date])
 }
 
-model Assesments {
-  id              Int @id @default(autoincrement())
-  markSessionId   Int
-  studentId       Int
-  
-  marks           Float
+model Assessment {
+  id            Int @id @default(autoincrement())
+  markSessionId Int
+  studentId     Int
 
-  markSession     MarkSession   @relation(fields:  [markSessionId], refrences: [id])
-  student     Student   @relation(fields:  [studentId], refrences: [id])
+  marks Float
+
+  markSession MarkSession @relation(fields: [markSessionId], references: [id])
+  student     Student     @relation(fields: [studentId], references: [id])
+
   @@unique([markSessionId, studentId])
 }
