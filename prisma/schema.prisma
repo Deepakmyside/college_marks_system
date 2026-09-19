@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,88 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id            Int   @id @default(autoincrement())
+  name          String
+  email         String @unique
+  passwordHash  String
+  role          String 
+  markSessions  MarkSession[]
+}
+model Branch {
+  id        Int @id @unique(autoincrement())
+  name      String @unique
+  students  Student[]
+  subjects  Subject[]
+  markSessions  MarkSession[]
+}
+
+model Semester {
+  id       Int   @id @unique(autoincrement())
+  number   Int   @unique
+  students Student[]
+  subjects Subject[]
+  markSessions  MarkSession[]
+}
+
+model Student {
+  id           Int @id @unique(autoincrement())
+  uid          String @unique
+  name         String
+  batch        String
+  section      String
+
+  branchId     Int
+  semesterId   Int
+
+  branch       Branch   @relation(fields: [branchId], refrences: [id])
+  semester     Semester @relation(fields: [semesterId], refrences: [id])
+
+  assessments Assessments[]
+}
+
+model Subject {
+  id         Int @id @default(autoincrement())
+  name       String 
+  branchId   Int
+  semesterId Int
+  markSessions  MarkSession[]
+}
+
+model MarkSession {
+  id          Int   @id @default(autoincrement())
+  teacherId   Int   
+  subjectId   Int
+  branchId    Int
+  semesterId  Int
+  section     String
+  date        DateTime
+
+  teacher   User     @relation(fields:   [teacherId], refrences: [id])
+  subject   Subject  @relation(fields:   [subjectId], refrences: [id])
+  branch    Branch   @relation(fields:   [branchId], refrences: [id])
+  semester  Semester @relation(fields:   [semesterId], refrences: [id])
+
+assessments Assessments[]
+
+@@unique([subjectId, branchId, semesterId, section, date])
+
+}
+
+model Assesments {
+  id              Int @id @default(autoincrement())
+  markSessionId   Int
+  studentId       Int
+  subjectId       Int
+  marks           Float
+
+  markSession     MarkSession   @relation(fields:  [markSessionId], refrences: [id])
+  
+  student     Student   @relation(fields:  [studentId], refrences: [id])
+  
+  subject     Subject   @relation(fields:  [subjectId], refrences: [id])
+
+  @@unique([markSessionId, studentId])
 }
