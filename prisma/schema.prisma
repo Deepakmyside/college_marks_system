@@ -79,14 +79,10 @@ model Assesments {
   id              Int @id @default(autoincrement())
   markSessionId   Int
   studentId       Int
-  subjectId       Int
+  
   marks           Float
 
   markSession     MarkSession   @relation(fields:  [markSessionId], refrences: [id])
-  
   student     Student   @relation(fields:  [studentId], refrences: [id])
-  
-  subject     Subject   @relation(fields:  [subjectId], refrences: [id])
-
   @@unique([markSessionId, studentId])
 }
