@@ -4,7 +4,8 @@ const cors = require("cors");
 const app = express();
 
 const studentRoutes = require("./routes/studentRoutes")
-
+const subjectRoutes = require("./routes/subjectRoutes")
+const markRoutes = require("./routes/markRoutes")
 app.use(cors());
 
 app.use(express.json());
@@ -16,5 +17,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/students", studentRoutes)
-
+app.use("/api/subjects",subjectRoutes)
+app.use("/api/marks", markRoutes)
 module.exports = app;
