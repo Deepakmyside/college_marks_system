@@ -28,7 +28,7 @@ model Branch {
 model Semester {
   id                Int           @id @default(autoincrement())
   number            Int           @unique
-  students          Student[]
+ 
   subjects          Subject[]
   markSessions      MarkSession[]
 }
@@ -78,7 +78,7 @@ model MarkSession {
 
   assessments Assessment[]
 
-  @@unique([subjectId, branchId, semesterId, section, date])
+  @@unique([subjectId, branchId, semesterId,batch, section, date])
 }
 
 model Assessment {
@@ -98,9 +98,9 @@ model AcademicPeriod {
   id             Int  @id @default(autoincrement())
   academicYear   String
   term           String
-  semesterId     String
   startDate      DateTime 
   endDate        DateTime 
 
-  semester Semester @relation(fields: [semesterId], references: [id])  
+
+  @@unique([academicYear, term])
 }

@@ -1,4 +1,4 @@
-const getCurrentSemester = async (prisma, BroadcastChannel, date = new Date())  => {
+const getCurrentSemester = async (prisma, batch, date = new Date())  => {
     // Find the academic period in which this date falls 
     const periods = await prisma.academicPeriod.findMany({
         where: {
@@ -9,9 +9,7 @@ const getCurrentSemester = async (prisma, BroadcastChannel, date = new Date())  
                 gte: date
             }
         },
-        include: {
-            semester: true
-        }
+      
     });
    
     // No academic period means collage calendar is missing
@@ -21,6 +19,7 @@ const getCurrentSemester = async (prisma, BroadcastChannel, date = new Date())  
 
     // we expect only one activeacademic period
     const period = periods[0];
+    console.log("Academic period:", period);
 
 
     // Get the starting year from student's batch example : "2024-28" => 2024
@@ -39,7 +38,7 @@ const getCurrentSemester = async (prisma, BroadcastChannel, date = new Date())  
     // Calculate semester based on ODD / EVEN period
     let semesterNumber;
 
-    if(!period.term === "ODD") {
+    if(period.term === "ODD") {
         semesterNumber = 1 + (yearDifference * 2);
     }else if (period.term === "EVEN") {
         semesterNumber = 2 + (yearDifference * 2);
@@ -48,7 +47,7 @@ const getCurrentSemester = async (prisma, BroadcastChannel, date = new Date())  
     }
 
     // Make sure semester is within normal BTech range
-     if(!semesterNumber < 1 || semesterNumber > 8) {
+     if(semesterNumber < 1 || semesterNumber > 8) {
         throw new Error("Batch is outside the active academic semester")
      }
 

@@ -1,5 +1,5 @@
 const prisma = require("../config/db")
-
+const {  getCurrentSemester} = require("../services/academic.service")
 const markSubmission = async (req, res) => {
     try {
 
@@ -8,7 +8,6 @@ const markSubmission = async (req, res) => {
             teacherId,
             subjectId,
             branchId,
-            semesterId,
             section,
             date,
             marks 
@@ -16,7 +15,7 @@ const markSubmission = async (req, res) => {
 
         // Validation 1: Required fields 
         
-        if (  !teacherId || !subjectId || !branchId || !semesterId || !section || !date || !marks 
+        if (  !teacherId || !subjectId || !branchId  || !section || !date || !marks 
         ) {
             return res.status(400).json({
                 success: false,
@@ -37,7 +36,7 @@ const markSubmission = async (req, res) => {
 
         const invalidMark = marks.find(
             (item) => 
-                typeof item.marks !== " number" ||
+                typeof item.marks !== "number" ||
             item.marks < 0 || item.marks > 10
         );
 
@@ -48,14 +47,53 @@ const markSubmission = async (req, res) => {
             });
         }
 
+
+    //    Derive batch from first student in marks array 
+       const firstStudent = await prisma.student.findUnique({
+        where: {
+            id: marks[0].studentId 
+        }
+       });
+
+       if(!firstStudent) {
+        return res.status(400).json({
+            success:false,
+            message: " Invalid studentId in marks array"
+        })
+       }
+
+       const batch = firstStudent.batch;
+
+    //    calculaate the student's CURRENT semester
+       const currentSemesterNumber = await getCurrentSemester(
+        prisma, batch, new Date(date)
+       );
+        
+
+    //    Find the semester record corresponding to calculated semester number 
+       const currentSemester = await prisma.semester.findUnique({
+        where: {
+            number: currentSemesterNumber
+        }
+       });
+
+       if(!currentSemester) {
+        return res.status(400).json({
+            success: false,
+            message: `Semester ${currentSemesterNumber}not found`
+        })
+       }
+
+
         // Checking if this markSession already exists
 
         const existing = await prisma.markSession.findFirst({
             where: {
                 subjectId: Number(subjectId),
                 branchId: Number(branchId),
-                semesterId: Number(semesterId),
+                semesterId: currentSemester.id,
                 section,
+                batch,
                 date: new Date(date)
             },
             include: { 
@@ -76,8 +114,9 @@ const markSubmission = async (req, res) => {
                 teacherId: Number(teacherId),
                 subjectId: Number(subjectId),
                 branchId:  Number(branchId),
-                semesterId: Number(semesterId),
+                semesterId: currentSemester.id,
                 section,
+                batch,
                 date: new Date(date)
             }
         });

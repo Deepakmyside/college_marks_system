@@ -35,7 +35,45 @@ async function main() {
         update: {},
         create: {number: 4 }
     })
+    
+    const sem5 = await prisma.semester.upsert({
+          where: { number: 5 },
+          update: {},
+          create: { number: 5 }
+         });
 
+
+    const odd2026 = await prisma.academicPeriod.upsert({
+    where: {
+        academicYear_term: {
+            academicYear: "2026-27",
+            term: "ODD"
+        }
+    },
+    update: {},
+    create: {
+        academicYear: "2026-27",
+        term: "ODD",
+        startDate: new Date("2026-07-01"),
+        endDate: new Date("2026-12-31")
+    }
+    });
+
+    const even2026 = await prisma.academicPeriod.upsert({
+    where: {
+        academicYear_term: {
+            academicYear: "2026-27",
+            term: "EVEN"
+        }
+    },
+    update: {},
+    create: {
+        academicYear: "2026-27",
+        term: "EVEN",
+        startDate: new Date("2027-01-01"),
+        endDate: new Date("2027-06-30")
+    }
+    });
 
     const teacher = await prisma.user.upsert({
         where: {email: "teacher@college.com"},
@@ -70,7 +108,7 @@ async function main() {
             batch: "2024-28",
             section: "A",
             branchId: aiml.id,
-            semesterId: sem4.id
+        
         },
     });
 
@@ -84,7 +122,7 @@ async function main() {
             batch: "2024-28",
             section: "A",
             branchId: aiml.id,
-            semesterId: sem4.id
+
         },
     })
 
@@ -97,20 +135,21 @@ async function main() {
             batch: "2024-28",
             section: "A",
             branchId: cse.id,
-            semesterId:sem4.id
+          
         },
     });
 
     const student4 = await prisma.student.upsert({
             where: { uid: "CSE001" },
-        update: {},
+        update: {
+            batch:"2025-29"},
         create: {
           uid: "CSE001",
           name: "Arjun Kumar",
-          batch: "2024-28",
+          batch: "2025-29",
           section: "A",
           branchId: cse.id,
-          semesterId: sem4.id,
+        
        },
     });
     
@@ -153,7 +192,8 @@ async function main() {
         teacherId: teacher.id,
         subjectId: dbms.id,
         branchId: aiml.id,
-        semesterId: sem4.id,
+        semesterId: sem5.id,
+        batch: "2024-28",
         section: "A",
         date: new Date("2026-09-19"),  
 
