@@ -26,11 +26,11 @@ model Branch {
 }
 
 model Semester {
-  id           Int           @id @default(autoincrement())
-  number       Int           @unique
-  students     Student[]
-  subjects     Subject[]
-  markSessions MarkSession[]
+  id                Int           @id @default(autoincrement())
+  number            Int           @unique
+  students          Student[]
+  subjects          Subject[]
+  markSessions      MarkSession[]
 }
 
 model Student {
@@ -41,10 +41,10 @@ model Student {
   section String
 
   branchId   Int
-  semesterId Int
+  
 
   branch   Branch   @relation(fields: [branchId], references: [id])
-  semester Semester @relation(fields: [semesterId], references: [id])
+  
 
   assessments Assessment[]
 }
@@ -67,6 +67,7 @@ model MarkSession {
   subjectId  Int
   branchId   Int
   semesterId Int
+  batch      String
   section    String
   date       DateTime
 
@@ -91,4 +92,15 @@ model Assessment {
   student     Student     @relation(fields: [studentId], references: [id])
 
   @@unique([markSessionId, studentId])
+}
+
+model AcademicPeriod {
+  id             Int  @id @default(autoincrement())
+  academicYear   String
+  term           String
+  semesterId     String
+  startDate      DateTime 
+  endDate        DateTime 
+
+  semester Semester @relation(fields: [semesterId], references: [id])  
 }
