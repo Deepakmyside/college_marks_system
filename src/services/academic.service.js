@@ -56,6 +56,28 @@ const getCurrentSemester = async (prisma, batch, date = new Date())  => {
     return semesterNumber;
 };
 
+const getBatchForSemester = (semesterNumber, academicPeriod) => {
+    const academicStartYear = Number(
+        academicPeriod.academicYear.split("-")[0]
+    );
+    let yearDifference;
+    
+    if(academicPeriod.term === "ODD") {
+        yearDifference = (semesterNumber  - 1) / 2;
+    } else  if (academicPeriod.term === "EVEN") {
+        yearDifference = (semesterNumber -2 ) / 2;
+    } else {
+        throw new Error("Invalid academic period term");
+    }
+
+    if(!Number.isInteger(yearDifference) || yearDifference < 0){
+        throw new Error("Invalid semester for this academic period");
+    }
+    const batchStartYear = academicStartYear - yearDifference;
+
+    const batchEndYear = batchStartYear + 4;
+    return `${batchStartYear}-${String(batchEndYear).slice(-2)}`;
+};
 module.exports = {
-    getCurrentSemester
+    getCurrentSemester, getBatchForSemester
 };
