@@ -1,5 +1,6 @@
 const prisma = require("../config/db")
 const { getBatchForSemester } = require("../services/academic.service");
+const { calculateSubjectAverage, calculateOverallAverage} = require("../services/marks.service") 
 
 const getHodDashboard = async (req, res) => {
     try {
@@ -128,6 +129,47 @@ const getHodDashboard = async (req, res) => {
             date: "asc"
         }
     });
+
+   const studentAverages = students.map((student) => {
+
+    const subjectMarks = {};
+
+    markSessions.forEach((session) => {
+
+        const assessment = session.assessments.find(
+            (assessment) => assessment.studentId === student.id
+        );
+
+        if (!assessment) {
+            return;
+        }
+
+        if (!subjectMarks[session.subjectId]) {
+            subjectMarks[session.subjectId] = {
+                subjectId: session.subjectId,
+                marks: []
+            };
+        }
+
+        subjectMarks[session.subjectId].marks.push(assessment.marks);
+    });
+
+    const subjectAverages = Object.values(subjectMarks).map((subject) => {
+        return {
+            subjectId: subject.subjectId,
+            average: calculateSubjectAverage(subject.marks)
+        }
+    });
+
+    const overallAverage = calculateOverallAverage(subjectAverages.map((subject) => subject.average)
+    );
+
+    return {
+        ...student,
+        subjectAverages,
+        overallAverage
+    };
+});
 // Return dashboard data
 
     return res.status(200).json({
@@ -143,7 +185,7 @@ const getHodDashboard = async (req, res) => {
             section
         },
         subjects,
-        students,
+        students: studentAverages,
         markSessions
     });
     }  catch (error) {
