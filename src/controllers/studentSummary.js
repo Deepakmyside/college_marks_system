@@ -1,4 +1,8 @@
 const prisma = require("../config/db");
+const { calculateDayAverage,
+    calculateSubjectAverage,
+    calculateOverallAverage
+} = require("../services/marks.service");
 
 const getStudentSummary = async (req, res) => {
     try {
@@ -67,6 +71,9 @@ const getStudentSummary = async (req, res) => {
         }) ;
 
         const summary = {};
+        const subjectMarks = {};
+
+    
 
         markSessions.forEach((session)  => {
       const date = session.date
@@ -83,22 +90,54 @@ const getStudentSummary = async (req, res) => {
       const assessment = session.assessments[0];
 
       if(assessment) {
+        const subjectId = session.subject.id;
+        const marks = assessment.marks;
+
         summary[date].subjects.push({
             subjectId: session.subject.id,
             subjectName: session.subject.name,
             marks: assessment.marks
         });
+
+        if(!subjectMarks[subjectId]) {
+            subjectMarks[subjectId] = {
+                subjectId,
+                subjectName: session.subject.name,
+                marks: []
+            };
+        }
+
+        subjectMarks[subjectId].marks.push(marks)
       }
 
     });
+     const subjectAverages = Object.values(subjectMarks).map((subject) => {
+        return {
+            subjectId: subject.subjectId,
+            subjectName: subject.subjectName,
+            average: calculateSubjectAverage(subject.marks)
+        };
+      });
 
-    const dailySummary = Object.values(summary);
+      const overallAverage = calculateOverallAverage(
+        subjectAverages.map((subject) => subject.average)
+      );
+
+
+    const dailySummary = Object.values(summary).map((day) => {
+        return{
+            ...day,
+            dayAverage: calculateDayAverage(day.subjects)
+        }
+    })
 
     return res.status(200).json ({
         success: true,
         student,
         semesterId: Number(semesterId),
-        summary: dailySummary
+        summary: dailySummary,
+        subjectAverages,
+        overallAverage
     });
     }  catch (error) {
         console.error(error);
