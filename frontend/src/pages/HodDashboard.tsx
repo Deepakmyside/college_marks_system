@@ -61,6 +61,7 @@ const HodDashboard = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log("Dashboard filters:", filters);
       const data = await hodApi.getDashboard(filters.branchId, filters.semesterId, filters.section);
       setDashboardData(data);
     } catch (err) {

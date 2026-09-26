@@ -159,7 +159,7 @@ async function main() {
         data: {
             name: "DBMS",
             branchId: aiml.id,
-            semesterId: sem4.id,
+            semesterId: sem5.id,
         },
     });
 
@@ -167,7 +167,7 @@ async function main() {
         data: {
             name: "Operation Systems",
             branchId: aiml.id,
-            semesterId: sem4.id,
+            semesterId: sem5.id,
         },
     });
 
@@ -175,7 +175,7 @@ async function main() {
         data: {
         name:"Mathematics",
         branchId: aiml.id,
-        semesterId: sem4.id
+        semesterId: sem5.id
         }
     });
 
