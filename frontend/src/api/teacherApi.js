@@ -44,6 +44,13 @@ export const teacherApi = {
     });
     return response.data;
   },
+  getExistingMarks: async (params) => {
+  const response = await api.get('/api/marks', {
+    params
+  });
+
+  return response.data;
+},
 
   submitMarks: async (data) => {
     const response = await api.post('/api/marks', data);

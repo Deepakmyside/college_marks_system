@@ -119,46 +119,68 @@ const TeacherDashboard = () => {
     }
   };
 
-  const loadStudents = async () => {
-    if (
-      !filters.branchId ||
-      !filters.semesterId ||
-      !filters.section ||
-      !filters.subjectId
-    ) {
-      setMessage('Please select all required fields');
-      return;
-    }
+ const loadStudents = async () => {
+  if (
+    !filters.branchId ||
+    !filters.semesterId ||
+    !filters.section ||
+    !filters.subjectId
+  ) {
+    setMessage('Please select all required fields');
+    return;
+  }
 
-    try {
-      setLoading(true);
-      setMessage('');
+  try {
+    setLoading(true);
+    setMessage('');
 
-      const data = await teacherApi.getStudents(
-        filters.branchId,
-        filters.semesterId,
-        filters.section
-      );
+    // 1. Load students
+    const data = await teacherApi.getStudents(
+      filters.branchId,
+      filters.semesterId,
+      filters.section
+    );
 
-      setStudents(data.students || []);
+    const studentsList = data.students || [];
 
-      const initialMarks = {};
+    setStudents(studentsList);
 
-      (data.students || []).forEach(student => {
-        initialMarks[student.id] = '';
+    // 2. Initially keep marks empty
+    const initialMarks = {};
+
+    studentsList.forEach(student => {
+      initialMarks[student.id] = '';
+    });
+
+    // 3. Check if marks already exist for selected date
+    const marksData = await teacherApi.getExistingMarks({
+      branchId: filters.branchId,
+      semesterId: filters.semesterId,
+      section: filters.section,
+      subjectId: filters.subjectId,
+      date: filters.date
+    });
+
+    // 4. Put existing marks into input boxes
+    if (marksData.markSession?.assessments) {
+      marksData.markSession.assessments.forEach(assessment => {
+        initialMarks[assessment.studentId] = String(assessment.marks);
       });
-
-      setMarks(initialMarks);
-    } catch (error) {
-      console.error(error);
-      setMessage(
-        error.response?.data?.message ||
-        'Failed to load students'
-      );
-    } finally {
-      setLoading(false);
     }
-  };
+
+    setMarks(initialMarks);
+
+  } catch (error) {
+    console.error(error);
+
+    setMessage(
+      error.response?.data?.message ||
+      'Failed to load students'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleMarkChange = (studentId, value) => {
     if (value === '') {
