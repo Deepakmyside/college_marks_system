@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { hodApi } from '../api/hodApi';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Select, SelectOption } from '../components/ui/Select';
@@ -85,7 +86,58 @@ const HodDashboard = () => {
     const subjectAvg = student.subjectAverages?.find(s => s.subjectId === subjectId);
     return subjectAvg?.average !== undefined ? subjectAvg.average.toFixed(2) : '-';
   };
+   
+  const downloadExcel = () => {
+  if (!dashboardData?.students?.length) {
+    return;
+  }
 
+  const rows = dashboardData.students.map(student => {
+    const row = {
+      UID: student.uid,
+      'Student Name': student.name,
+    };
+
+    dashboardData.subjects.forEach(subject => {
+      const subjectAverage = student.subjectAverages?.find(
+        item => item.subjectId === subject.id
+      );
+
+      row[subject.name] =
+        subjectAverage?.average !== undefined
+          ? Number(subjectAverage.average.toFixed(2))
+          : '';
+    });
+
+    row['Overall Average'] =
+      student.overallAverage !== undefined
+        ? Number(student.overallAverage.toFixed(2))
+        : '';
+
+    return row;
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet['!cols'] = [
+  { wch: 15 }, // UID
+  { wch: 25 }, // Student Name
+  ...dashboardData.subjects.map(() => ({ wch: 20 })),
+  { wch: 18 }, // Overall Average
+];
+
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    'Student Performance'
+  );
+
+  const fileName =
+    `${dashboardData.filters.batch}_Sem${dashboardData.filters.semester}_Section${dashboardData.filters.section}.xlsx`;
+
+  XLSX.writeFile(workbook, fileName);
+};
   if (filterLoading) {
     return (
       <div className="space-y-6">
@@ -184,13 +236,28 @@ const HodDashboard = () => {
               </Select>
             </div>
           </div>
-          <Button 
-            onClick={fetchDashboard}
-            disabled={!filters.branchId || !filters.semesterId || !filters.section || loading}
-            className="mt-4"
-          >
-            {loading ? 'Loading...' : 'Load Dashboard'}
-          </Button>
+        <div className="flex gap-3 mt-4">
+  <Button 
+    onClick={fetchDashboard}
+    disabled={
+      !filters.branchId ||
+      !filters.semesterId ||
+      !filters.section ||
+      loading
+    }
+  >
+    {loading ? 'Loading...' : 'Load Dashboard'}
+  </Button>
+
+  {dashboardData?.students?.length > 0 && (
+    <Button
+      onClick={downloadExcel}
+      variant="outline"
+    >
+      Download Excel
+    </Button>
+  )}
+</div>
         </CardContent>
       </Card>
 

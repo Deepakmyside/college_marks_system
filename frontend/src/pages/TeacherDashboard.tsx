@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { teacherApi } from '../api/teacherApi';
-
+import { toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -41,7 +41,7 @@ const TeacherDashboard = () => {
 
   const [marks, setMarks] = useState({});
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+
 
   // Load dropdown data
   useEffect(() => {
@@ -58,7 +58,7 @@ const TeacherDashboard = () => {
         setSections(sec.sections || []);
       } catch (error) {
         console.error(error);
-        setMessage('Failed to load filter data');
+        toast.error('Failed to load filter data');
       }
     };
 
@@ -83,7 +83,7 @@ const TeacherDashboard = () => {
       } catch (error) {
         console.error(error);
         setSubjects([]);
-        setMessage('Failed to load subjects');
+        toast.error('Failed to load subjects');
       }
     };
 
@@ -96,7 +96,6 @@ const TeacherDashboard = () => {
       [field]: value,
     }));
 
-    setMessage('');
 
     if (
       field === 'branchId' ||
@@ -128,14 +127,13 @@ const TeacherDashboard = () => {
     !filters.section ||
     !filters.subjectId
   ) {
-    setMessage('Please select all required fields');
+    toast.warning('Please select all required fields');
     return;
   }
 
   try {
     setLoading(true);
-    setMessage('');
-
+  
     // 1. Load students
     const data = await teacherApi.getStudents(
       filters.branchId,
@@ -175,7 +173,7 @@ const TeacherDashboard = () => {
   } catch (error) {
     console.error(error);
 
-    setMessage(
+    toast.error(
       error.response?.data?.message ||
       'Failed to load students'
     );
@@ -211,13 +209,13 @@ const TeacherDashboard = () => {
     );
 
     if (incomplete) {
-      setMessage('Please enter marks for all students');
+      toast.warning('Please enter marks for all students');
       return;
     }
 
     try {
       setLoading(true);
-      setMessage('');
+      
 
       const payload = {
         teacherId: 1,
@@ -234,7 +232,7 @@ const TeacherDashboard = () => {
 
       const data = await teacherApi.submitMarks(payload);
 
-      setMessage(
+      toast.success(
         data.message || 'Marks submitted successfully'
       );
 
@@ -243,7 +241,7 @@ const TeacherDashboard = () => {
     } catch (error) {
       console.error(error);
 
-      setMessage(
+      toast.error(
         error.response?.data?.message ||
         'Failed to submit marks'
       );
@@ -405,13 +403,7 @@ const TeacherDashboard = () => {
         </CardContent>
       </Card>
 
-      {message && (
-        <Card>
-          <CardContent className="pt-6">
-            <p>{message}</p>
-          </CardContent>
-        </Card>
-      )}
+      
 
       {students.length > 0 && (
         <Card>
