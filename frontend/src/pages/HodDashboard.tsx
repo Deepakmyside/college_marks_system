@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { hodApi } from '../api/hodApi';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Select, SelectOption } from '../components/ui/Select';
@@ -9,11 +9,13 @@ import { Skeleton } from '../components/ui/Skeleton';
 
 const HodDashboard = () => {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({
+  const location = useLocation();
+  const [filters, setFilters] = useState(
+    location.state?.dashboardFilters || {
     branchId: '',
     semesterId: '',
     section: ''
-  });
+  } );
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -72,7 +74,11 @@ const HodDashboard = () => {
   };
 
   const handleStudentClick = (studentId) => {
-    navigate(`/student-summary?studentId=${studentId}&semesterId=${filters.semesterId}`);
+    navigate(`/student-summary?studentId=${studentId}&semesterId=${filters.semesterId}`,  {
+      state: {
+        dashboardFilters: filters
+      }
+    });
   };
 
   const getSubjectAverage = (student, subjectId) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { hodApi } from '../api/hodApi';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/Badge';
 const StudentSummary = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const studentId = searchParams.get('studentId');
   const semesterId = searchParams.get('semesterId');
 
@@ -53,7 +54,10 @@ const StudentSummary = () => {
       <Card>
         <CardContent className="pt-6">
           <p className="text-muted-foreground">Missing student ID or semester ID.</p>
-          <Button onClick={() => navigate('/')} className="mt-4">
+          <Button onClick={() => navigate('/', {
+            state: {
+            dashboardFilters: location.state?.dashboardFilters }
+          })} className="mt-4">
             Back to Dashboard
           </Button>
         </CardContent>
@@ -81,7 +85,11 @@ const StudentSummary = () => {
 
   return (
     <div className="space-y-6">
-      <Button onClick={() => navigate('/')} variant="outline">
+      <Button onClick={() => navigate('/', {
+        state: {
+          dashboardFilters: location.state?.dashboardFilters
+        }
+      })} variant="outline">
         ← Back to Dashboard
       </Button>
 
@@ -139,30 +147,49 @@ const StudentSummary = () => {
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        {summaryData.summary[0]?.subjects.map(subject => (
-                          <TableHead key={subject.subjectId}>{subject.subjectName}</TableHead>
-                        ))}
-                        <TableHead className="text-right">Day Average</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {summaryData.summary.map((day, index) => (
-                        <TableRow key={`${day.date}-${index}`}>
-                          <TableCell className="font-medium">{day.date}</TableCell>
-                          {day.subjects.map(subject => (
-                            <TableCell key={subject.subjectId}>
-                              {subject.marks !== undefined ? subject.marks : '-'}
-                            </TableCell>
-                          ))}
-                          <TableCell className="text-right font-medium">
-                            {day.dayAverage !== undefined ? day.dayAverage.toFixed(2) : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
+                   <TableHeader>
+  <TableRow>
+    <TableHead>Date</TableHead>
+
+    {summaryData.subjectAverages.map(subject => (
+      <TableHead key={subject.subjectId}>
+        {subject.subjectName}
+      </TableHead>
+    ))}
+
+    <TableHead className="text-right">
+      Day Average
+    </TableHead>
+  </TableRow>
+</TableHeader>
+
+<TableBody>
+  {summaryData.summary.map((day, index) => (
+    <TableRow key={`${day.date}-${index}`}>
+      <TableCell className="font-medium">
+        {day.date}
+      </TableCell>
+
+      {summaryData.subjectAverages.map(subject => {
+        const subjectData = day.subjects.find(
+          s => s.subjectId === subject.subjectId
+        );
+
+        return (
+          <TableCell key={subject.subjectId}>
+            {subjectData?.marks ?? '-'}
+          </TableCell>
+        );
+      })}
+
+      <TableCell className="text-right font-medium">
+        {day.dayAverage !== undefined
+          ? day.dayAverage.toFixed(2)
+          : '-'}
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
                     <TableFooter>
                       <TableRow>
                         <TableCell className="font-medium">Subject Average</TableCell>
