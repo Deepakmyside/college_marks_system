@@ -140,10 +140,10 @@ const HodDashboard = () => {
 };
   if (filterLoading) {
     return (
-      <div className="space-y-6">
-        <Card>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <Card className="mb-4">
           <CardHeader>
-            <CardTitle>HOD Dashboard</CardTitle>
+            <CardTitle className="text-[#0F172A]">HOD Dashboard</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -157,23 +157,25 @@ const HodDashboard = () => {
 
   if (filterError) {
     return (
-      <Card className="border-destructive">
-        <CardContent className="pt-6">
-          <p className="text-destructive">{filterError}</p>
-          <Button onClick={loadFilterData} variant="outline" className="mt-4">
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <Card className="mb-4 border-destructive">
+          <CardContent className="pt-6">
+            <p className="text-destructive">{filterError}</p>
+            <Button onClick={loadFilterData} variant="outline" className="mt-4">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (loading && !dashboardData) {
     return (
-      <div className="space-y-6">
-        <Card>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <Card className="mb-4">
           <CardHeader>
-            <CardTitle>HOD Dashboard</CardTitle>
+            <CardTitle className="text-[#0F172A]">HOD Dashboard</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -186,10 +188,10 @@ const HodDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <Card className="mb-4">
         <CardHeader>
-          <CardTitle>HOD Dashboard</CardTitle>
+          <CardTitle className="text-[#0F172A]">HOD Dashboard</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -236,33 +238,33 @@ const HodDashboard = () => {
               </Select>
             </div>
           </div>
-        <div className="flex gap-3 mt-4">
-  <Button 
-    onClick={fetchDashboard}
-    disabled={
-      !filters.branchId ||
-      !filters.semesterId ||
-      !filters.section ||
-      loading
-    }
-  >
-    {loading ? 'Loading...' : 'Load Dashboard'}
-  </Button>
+          <div className="flex gap-3 mt-4">
+            <Button 
+              onClick={fetchDashboard}
+              disabled={
+                !filters.branchId ||
+                !filters.semesterId ||
+                !filters.section ||
+                loading
+              }
+            >
+              {loading ? 'Loading...' : 'Load Dashboard'}
+            </Button>
 
-  {dashboardData?.students?.length > 0 && (
-    <Button
-      onClick={downloadExcel}
-      variant="outline"
-    >
-      Download Excel
-    </Button>
-  )}
-</div>
+            {dashboardData?.students?.length > 0 && (
+              <Button
+                onClick={downloadExcel}
+                variant="outline"
+              >
+                Download Excel
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {error && (
-        <Card className="border-destructive">
+        <Card className="mb-4 border-destructive">
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>
@@ -271,9 +273,9 @@ const HodDashboard = () => {
 
       {dashboardData && (
         <>
-          <Card>
+          <Card className="mb-4">
             <CardHeader>
-              <CardTitle>Academic Information</CardTitle>
+              <CardTitle className="text-[#0F172A]">Academic Information</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -298,59 +300,50 @@ const HodDashboard = () => {
           </Card>
 
           {!dashboardData.subjects || dashboardData.subjects.length === 0 ? (
-            <Card>
+            <Card className="mb-4">
               <CardContent className="pt-6">
                 <p className="text-muted-foreground">No subjects found for this selection.</p>
               </CardContent>
             </Card>
           ) : !dashboardData.students || dashboardData.students.length === 0 ? (
-            <Card>
+            <Card className="mb-4">
               <CardContent className="pt-6">
                 <p className="text-muted-foreground">No students found for this selection.</p>
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Student Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>UID</TableHead>
-                        <TableHead>Student Name</TableHead>
-                        {dashboardData.subjects.map(subject => (
-                          <TableHead key={subject.id}>{subject.name}</TableHead>
-                        ))}
-                        <TableHead className="text-right">Overall Average</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {dashboardData.students.map(student => (
-                        <TableRow 
-                          key={student.id}
-                          className="cursor-pointer hover:bg-muted"
-                          onClick={() => handleStudentClick(student.id)}
-                        >
-                          <TableCell>{student.uid}</TableCell>
-                          <TableCell className="font-medium">{student.name}</TableCell>
-                          {dashboardData.subjects.map(subject => (
-                            <TableCell key={subject.id}>
-                              {getSubjectAverage(student, subject.id)}
-                            </TableCell>
-                          ))}
-                          <TableCell className="text-right font-medium">
-                            {student.overallAverage !== undefined ? student.overallAverage.toFixed(2) : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <Table className="border border-[#E2E8F0]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="bg-[#F8FAFC] text-[#0F172A]">UID</TableHead>
+                  <TableHead className="bg-[#F8FAFC] text-[#0F172A]">Student Name</TableHead>
+                  {dashboardData.subjects.map(subject => (
+                    <TableHead key={subject.id} className="bg-[#F8FAFC] text-[#0F172A]">{subject.name}</TableHead>
+                  ))}
+                  <TableHead className="bg-[#F8FAFC] text-[#0F172A] text-right">Overall Average</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dashboardData.students.map(student => (
+                  <TableRow 
+                    key={student.id}
+                    className="cursor-pointer hover:bg-muted"
+                    onClick={() => handleStudentClick(student.id)}
+                  >
+                    <TableCell>{student.uid}</TableCell>
+                    <TableCell className="font-medium">{student.name}</TableCell>
+                    {dashboardData.subjects.map(subject => (
+                      <TableCell key={subject.id}>
+                        {getSubjectAverage(student, subject.id)}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right font-medium">
+                      {student.overallAverage !== undefined ? student.overallAverage.toFixed(2) : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </>
       )}
