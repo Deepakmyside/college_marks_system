@@ -126,8 +126,8 @@ const StudentSummary = () => {
                   <p className="font-medium">{summaryData.student.section}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Semester ID</p>
-                  <p className="font-medium">{summaryData.semesterId}</p>
+                  <p className="text-sm text-muted-foreground">Semester </p>
+                  <p className="font-medium">{summaryData.semester}</p>
                 </div>
               </div>
             </CardContent>

@@ -29,6 +29,16 @@ const getStudentSummary = async (req, res) => {
             }
         });
 
+        const semester = await prisma.semester.findUnique({
+            where: {
+                id: Number(semesterId)
+            },
+            select: {
+                id: true,
+                number: true
+            }
+        })
+
         if(!student) {
             return res.status(400).json ({
                 success: false,
@@ -134,7 +144,7 @@ const getStudentSummary = async (req, res) => {
     return res.status(200).json ({
         success: true,
         student,
-        semesterId: Number(semesterId),
+        semester: semester.number,
         summary: dailySummary,
         subjectAverages,
         overallAverage

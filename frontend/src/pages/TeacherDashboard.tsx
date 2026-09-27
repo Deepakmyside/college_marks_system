@@ -101,7 +101,9 @@ const TeacherDashboard = () => {
     if (
       field === 'branchId' ||
       field === 'semesterId' ||
-      field === 'section'
+      field === 'section'||
+    field === 'subjectId' ||
+    field === 'date'
     ) {
       setStudents([]);
       setMarks({});
