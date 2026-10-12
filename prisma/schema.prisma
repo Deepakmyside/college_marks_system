@@ -9,11 +9,12 @@ datasource db {
 }
 
 model User {
-  id           Int                        @id @default(autoincrement())
+  id           Int    @id @default(autoincrement())
   name         String
-  email        String                     @unique
+  email        String @unique
   passwordHash String
   role         String
+
   markSessions MarkSession[]
   assignments  TeacherSubjectAssignment[]
 }
@@ -27,9 +28,8 @@ model Branch {
 }
 
 model Semester {
-  id     Int @id @default(autoincrement())
-  number Int @unique
-
+  id           Int           @id @default(autoincrement())
+  number       Int           @unique
   subjects     Subject[]
   markSessions MarkSession[]
 }
@@ -42,10 +42,10 @@ model Student {
   section String
 
   branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
 
-  branch Branch @relation(fields: [branchId], references: [id])
-
-  assessments Assessment[]
+  groupMemberships SubjectGroupStudent[]
+  assessments      Assessment[]
 
   @@index([branchId, batch, section])
 }
@@ -55,14 +55,88 @@ model Subject {
   name       String
   branchId   Int
   semesterId Int
-  branch     Branch @relation(fields: [branchId], references: [id])
 
-  semester     Semester      @relation(fields: [semesterId], references: [id])
+  branch       Branch                     @relation(fields: [branchId], references: [id])
+  semester     Semester                   @relation(fields: [semesterId], references: [id])
+  groups       SubjectGroup[]
+  assignments  TeacherSubjectAssignment[]
   markSessions MarkSession[]
 
-  TeacherSubjectAssignment TeacherSubjectAssignment[]
-
   @@unique([name, branchId, semesterId])
+}
+
+model AcademicPeriod {
+  id           Int      @id @default(autoincrement())
+  academicYear String
+  term         String
+  startDate    DateTime
+  endDate      DateTime
+
+  assignments      TeacherSubjectAssignment[]
+  groups           SubjectGroup[]
+  groupMemberships SubjectGroupStudent[]
+  markSessions     MarkSession[]
+
+  @@unique([academicYear, term])
+}
+
+model SubjectGroup {
+  id               Int    @id @default(autoincrement())
+  name             String
+  subjectId        Int
+  academicPeriodId Int
+  batch            String
+  section          String
+
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  academicPeriod AcademicPeriod @relation(fields: [academicPeriodId], references: [id])
+
+  students           SubjectGroupStudent[]
+  teacherAssignments TeacherGroupAssignment[]
+  markSessions       MarkSession[]
+
+  @@unique([subjectId, academicPeriodId, batch, section])
+}
+
+model SubjectGroupStudent {
+  id               Int @id @default(autoincrement())
+  studentId        Int
+  subjectGroupId   Int
+  academicPeriodId Int
+
+  student        Student        @relation(fields: [studentId], references: [id])
+  subjectGroup   SubjectGroup   @relation(fields: [subjectGroupId], references: [id])
+  academicPeriod AcademicPeriod @relation(fields: [academicPeriodId], references: [id])
+
+  // A student can belong to only one group per academic period.
+  @@unique([studentId, academicPeriodId])
+  @@index([subjectGroupId])
+}
+
+model TeacherSubjectAssignment {
+  id               Int @id @default(autoincrement())
+  teacherId        Int
+  subjectId        Int
+  academicPeriodId Int
+
+  teacher        User           @relation(fields: [teacherId], references: [id])
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  academicPeriod AcademicPeriod @relation(fields: [academicPeriodId], references: [id])
+
+  groups       TeacherGroupAssignment[]
+  markSessions MarkSession[]
+
+  // One distinct subject per teacher per academic period.
+  @@unique([teacherId, academicPeriodId])
+}
+
+model TeacherGroupAssignment {
+  id                         Int @id @default(autoincrement())
+  teacherSubjectAssignmentId Int
+  subjectGroupId             Int @unique
+
+  teacherSubjectAssignment TeacherSubjectAssignment @relation(fields: [teacherSubjectAssignmentId], references: [id])
+  subjectGroup             SubjectGroup             @relation(fields: [subjectGroupId], references: [id])
 }
 
 model MarkSession {
@@ -71,11 +145,12 @@ model MarkSession {
   subjectId        Int
   branchId         Int
   semesterId       Int
+  academicPeriodId Int?
+  assignmentId     Int?
+  subjectGroupId   Int?
   batch            String
   section          String
   date             DateTime
-  academicPeriodId Int?
-  assignmentId     Int?
 
   teacher        User                      @relation(fields: [teacherId], references: [id])
   subject        Subject                   @relation(fields: [subjectId], references: [id])
@@ -83,10 +158,12 @@ model MarkSession {
   semester       Semester                  @relation(fields: [semesterId], references: [id])
   academicPeriod AcademicPeriod?           @relation(fields: [academicPeriodId], references: [id])
   assignment     TeacherSubjectAssignment? @relation(fields: [assignmentId], references: [id])
+  subjectGroup   SubjectGroup?             @relation(fields: [subjectGroupId], references: [id])
 
   assessments Assessment[]
 
   @@unique([subjectId, branchId, semesterId, batch, section, date])
+  @@index([teacherId, subjectId])
 }
 
 model Assessment {
@@ -103,37 +180,4 @@ model Assessment {
   student     Student     @relation(fields: [studentId], references: [id])
 
   @@unique([markSessionId, studentId])
-}
-
-model AcademicPeriod {
-  id           Int      @id @default(autoincrement())
-  academicYear String
-  term         String
-  startDate    DateTime
-  endDate      DateTime
-
-  assignments  TeacherSubjectAssignment[]
-  markSessions MarkSession[]
-
-  @@unique([academicYear, term])
-}
-
-model TeacherSubjectAssignment {
-  id               Int    @id @default(autoincrement())
-  teacherId        Int
-  subjectId        Int
-  academicPeriodId Int
-  batch            String
-  section          String
-
-  teacher        User            @relation(fields: [teacherId], references: [id])
-  subject        Subject         @relation(fields: [subjectId], references: [id])
-  AcademicPeriod AcademicPeriod? @relation(fields: [academicPeriodId], references: [id])
-  markSessions   MarkSession[]
-
-  // One teacher assigned to a subject group for a given period.
-  @@unique([teacherId, subjectId, academicPeriodId, batch, section])
-  // One teacher/group assignment for a subject in a given section and period.
-  @@unique([subjectId, academicPeriodId, batch, section])
-  @@index([teacherId, academicPeriodId])
 }

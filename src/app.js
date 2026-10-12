@@ -8,6 +8,7 @@ const subjectRoutes = require("./routes/subjectRoutes")
 const markRoutes = require("./routes/markRoutes")
 const hodRoutes = require("./routes/hodRoutes");
 const lookupRoutes = require("./routes/lookupRoutes");
+const teacherStudentsRoutes = require("./routes/teacherStudentsRoutes")
 app.use(cors());
 
 app.use(express.json());
@@ -24,4 +25,5 @@ app.use("/api/marks", markRoutes)
 app.use("/api/hod", hodRoutes)
 app.use("/api/lookup", lookupRoutes)
 app.use("/api/teacher-assignments", teacherAssignmentRoutes);
+app.use("/api/teachers", teacherStudentsRoutes)
 module.exports = app;

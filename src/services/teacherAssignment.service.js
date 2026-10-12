@@ -1,3 +1,4 @@
+
 const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
 
@@ -5,15 +6,13 @@ const assignTeacherToSubject = async ({
   teacherId,
   subjectId,
   academicPeriodId,
-  batch,
-  section,
+  subjectGroupId,
 }) => {
   if (
     !teacherId ||
     !subjectId ||
     !academicPeriodId ||
-    !batch ||
-    !section
+    !subjectGroupId
   ) {
     throw new Error("All assignment fields are required");
   }
@@ -42,6 +41,23 @@ const assignTeacherToSubject = async ({
     throw new Error("Academic period not found");
   }
 
+  const group = await prisma.subjectGroup.findUnique({
+    where: { id: Number(subjectGroupId) },
+  });
+
+  if (!group) {
+    throw new Error("Subject group not found");
+  }
+
+  if (
+    group.subjectId !== Number(subjectId) ||
+    group.academicPeriodId !== Number(academicPeriodId)
+  ) {
+    throw new Error(
+      "Subject group does not match the subject or academic period"
+    );
+  }
+
   // A teacher can teach only one distinct subject per academic period.
   const existingTeacherAssignment =
     await prisma.teacherSubjectAssignment.findFirst({
@@ -60,54 +76,81 @@ const assignTeacherToSubject = async ({
     );
   }
 
-  // Only one teacher can be assigned to this subject group.
+  // A subject group can have only one assigned teacher.
   const existingGroupAssignment =
-    await prisma.teacherSubjectAssignment.findFirst({
+    await prisma.teacherGroupAssignment.findUnique({
       where: {
-        subjectId: Number(subjectId),
-        academicPeriodId: Number(academicPeriodId),
-        batch,
-        section,
+        subjectGroupId: Number(subjectGroupId),
       },
     });
 
   if (existingGroupAssignment) {
     throw new Error(
-      "This subject already has a teacher assigned to this group"
+      "This subject group already has a teacher assigned"
     );
   }
 
+  // Create the teacher-subject assignment and group link together.
   return prisma.teacherSubjectAssignment.create({
     data: {
       teacherId: Number(teacherId),
       subjectId: Number(subjectId),
       academicPeriodId: Number(academicPeriodId),
-      batch,
-      section,
+
+      groups: {
+        create: {
+          subjectGroupId: Number(subjectGroupId),
+        },
+      },
     },
     include: {
       teacher: {
-        select: { id: true, name: true, email: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
       },
       subject: true,
-      AcademicPeriod: true,
+      academicPeriod: true,
+      groups: {
+        include: {
+          subjectGroup: true,
+        },
+      },
     },
   });
 };
 
 const getTeacherAssignment = async (teacherId) => {
-  const assignments = await prisma.teacherSubjectAssignment.findMany({
-    where: {
-      teacherId: Number(teacherId),
-    },
-    include: {
-      subject: true,
-      AcademicPeriod: true,
-    },
-  });
+  const assignments =
+    await prisma.teacherSubjectAssignment.findMany({
+      where: {
+        teacherId: Number(teacherId),
+      },
+      include: {
+        subject: true,
+        academicPeriod: true,
+        groups: {
+          include: {
+            subjectGroup: {
+              include: {
+                students: {
+                  include: {
+                    student: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
 
   return assignments;
 };
 
-
-module.exports = { assignTeacherToSubject, getTeacherAssignment };
+module.exports = {
+  assignTeacherToSubject,
+  getTeacherAssignment,
+};
