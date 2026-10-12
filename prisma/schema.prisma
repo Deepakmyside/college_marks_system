@@ -5,16 +5,17 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-    url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
+  id           Int                        @id @default(autoincrement())
   name         String
-  email        String        @unique
+  email        String                     @unique
   passwordHash String
   role         String
   markSessions MarkSession[]
+  assignments  TeacherSubjectAssignment[]
 }
 
 model Branch {
@@ -26,11 +27,11 @@ model Branch {
 }
 
 model Semester {
-  id                Int           @id @default(autoincrement())
-  number            Int           @unique
- 
-  subjects          Subject[]
-  markSessions      MarkSession[]
+  id     Int @id @default(autoincrement())
+  number Int @unique
+
+  subjects     Subject[]
+  markSessions MarkSession[]
 }
 
 model Student {
@@ -40,45 +41,52 @@ model Student {
   batch   String
   section String
 
-  branchId   Int
-  
-
-  branch   Branch   @relation(fields: [branchId], references: [id])
-  
-
-  assessments Assessment[]
-}
-
-model Subject {
-  id           Int           @id @default(autoincrement())
-  name         String
-  branchId     Int
-  semesterId   Int
-  markSessions MarkSession[]
+  branchId Int
 
   branch Branch @relation(fields: [branchId], references: [id])
 
-  semester Semester @relation(fields: [semesterId], references: [id])
+  assessments Assessment[]
+
+  @@index([branchId, batch, section])
+}
+
+model Subject {
+  id         Int    @id @default(autoincrement())
+  name       String
+  branchId   Int
+  semesterId Int
+  branch     Branch @relation(fields: [branchId], references: [id])
+
+  semester     Semester      @relation(fields: [semesterId], references: [id])
+  markSessions MarkSession[]
+
+  TeacherSubjectAssignment TeacherSubjectAssignment[]
+
+  @@unique([name, branchId, semesterId])
 }
 
 model MarkSession {
-  id         Int      @id @default(autoincrement())
-  teacherId  Int
-  subjectId  Int
-  branchId   Int
-  semesterId Int
-  batch      String
-  section    String
-  date       DateTime
+  id               Int      @id @default(autoincrement())
+  teacherId        Int
+  subjectId        Int
+  branchId         Int
+  semesterId       Int
+  batch            String
+  section          String
+  date             DateTime
+  academicPeriodId Int?
+  assignmentId     Int?
 
-  teacher  User     @relation(fields: [teacherId], references: [id])
-  subject  Subject  @relation(fields: [subjectId], references: [id])
-  branch   Branch   @relation(fields: [branchId], references: [id])
-  semester Semester @relation(fields: [semesterId], references: [id])
+  teacher        User                      @relation(fields: [teacherId], references: [id])
+  subject        Subject                   @relation(fields: [subjectId], references: [id])
+  branch         Branch                    @relation(fields: [branchId], references: [id])
+  semester       Semester                  @relation(fields: [semesterId], references: [id])
+  academicPeriod AcademicPeriod?           @relation(fields: [academicPeriodId], references: [id])
+  assignment     TeacherSubjectAssignment? @relation(fields: [assignmentId], references: [id])
 
   assessments Assessment[]
 
-  @@unique([subjectId, branchId, semesterId,batch, section, date])
+  @@unique([subjectId, branchId, semesterId, batch, section, date])
 }
 
 model Assessment {
@@ -86,7 +94,10 @@ model Assessment {
   markSessionId Int
   studentId     Int
 
-  marks Float
+  communicationSkills Float?
+  technicalSkills     Float?
+  behaviouralSkills   Float?
+  softSkills          Float?
 
   markSession MarkSession @relation(fields: [markSessionId], references: [id])
   student     Student     @relation(fields: [studentId], references: [id])
@@ -95,12 +106,34 @@ model Assessment {
 }
 
 model AcademicPeriod {
-  id             Int  @id @default(autoincrement())
-  academicYear   String
-  term           String
-  startDate      DateTime 
-  endDate        DateTime 
+  id           Int      @id @default(autoincrement())
+  academicYear String
+  term         String
+  startDate    DateTime
+  endDate      DateTime
 
+  assignments  TeacherSubjectAssignment[]
+  markSessions MarkSession[]
 
   @@unique([academicYear, term])
+}
+
+model TeacherSubjectAssignment {
+  id               Int    @id @default(autoincrement())
+  teacherId        Int
+  subjectId        Int
+  academicPeriodId Int
+  batch            String
+  section          String
+
+  teacher        User            @relation(fields: [teacherId], references: [id])
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+  AcademicPeriod AcademicPeriod? @relation(fields: [academicPeriodId], references: [id])
+  markSessions   MarkSession[]
+
+  // One teacher assigned to a subject group for a given period.
+  @@unique([teacherId, subjectId, academicPeriodId, batch, section])
+  // One teacher/group assignment for a subject in a given section and period.
+  @@unique([subjectId, academicPeriodId, batch, section])
+  @@index([teacherId, academicPeriodId])
 }
