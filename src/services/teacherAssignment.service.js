@@ -95,4 +95,19 @@ const assignTeacherToSubject = async ({
   });
 };
 
-module.exports = { assignTeacherToSubject };
+const getTeacherAssignment = async (teacherId) => {
+  const assignments = await prisma.teacherSubjectAssignment.findMany({
+    where: {
+      teacherId: Number(teacherId),
+    },
+    include: {
+      subject: true,
+      AcademicPeriod: true,
+    },
+  });
+
+  return assignments;
+};
+
+
+module.exports = { assignTeacherToSubject, getTeacherAssignment };

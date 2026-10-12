@@ -1,4 +1,4 @@
-const { assignTeacherToSubject,} = require("../services/teacherAssignment.service")
+const { assignTeacherToSubject, getTeacherAssignment} = require("../services/teacherAssignment.service")
 
 const createAssignment = async (req, res) => {
     try {
@@ -15,5 +15,22 @@ const createAssignment = async (req, res) => {
         });
     }
 };
+const getMyAssignments = async (req , res) => {
+    try {
+        const assignments = await getTeacherAssignment(req.params.teacherId);
 
-module.exports = { createAssignment}
+        return res.status(200).json({
+            success: true,
+            data: assignments,
+        });
+    } catch(error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: error.messsage,
+        });
+    }
+}; 
+
+
+module.exports = { createAssignment, getMyAssignments}
