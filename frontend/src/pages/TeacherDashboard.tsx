@@ -1,488 +1,110 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
 import { teacherApi } from '../api/teacherApi';
-import { toast } from 'sonner'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '../components/ui/Card';
 
-import {
-  Select,
-  SelectOption,
-} from '../components/ui/Select';
+const SKILLS = [
+  { key: 'communicationSkills', label: 'Communication' },
+  { key: 'technicalSkills', label: 'Technical' },
+  { key: 'behaviouralSkills', label: 'Behavioural' },
+  { key: 'softSkills', label: 'Soft skills' },
+];
 
-import { Button } from '../components/ui/Button';
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/ui/Table';
-
-const TeacherDashboard = () => {
-  const [filters, setFilters] = useState({
-    branchId: '',
-    semesterId: '',
-    section: '',
-    subjectId: '',
-    date: new Date().toISOString().split('T')[0],
-  });
-
-  const [branches, setBranches] = useState([]);
-  const [semesters, setSemesters] = useState([]);
-  const [sections, setSections] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [students, setStudents] = useState([]);
-
+export default function TeacherDashboard({ user, onLogout }) {
+  const [groups, setGroups] = useState([]);
+  const [groupId, setGroupId] = useState('');
+  const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [marks, setMarks] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const selectedGroup = groups.find(item => String(item.group.id) === groupId);
 
-  // Load dropdown data
+  const initializeMarks = (students) => Object.fromEntries(students.map(student => [student.id, Object.fromEntries(SKILLS.map(skill => [skill.key, '']))]));
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [b, s, sec] = await Promise.all([
-          teacherApi.getBranches(),
-          teacherApi.getSemesters(),
-          teacherApi.getSections(),
-        ]);
+    let active = true;
+    teacherApi.getAssignedGroups(user.id).then(response => {
+      if (!active) return;
+      const assigned = response.data || [];
+      setGroups(assigned);
+      if (assigned.length) setGroupId(String(assigned[0].group.id));
+      else toast.info('No subject groups are assigned to your account yet.');
+    }).catch(error => toast.error(error.response?.data?.message || 'Could not load your assigned groups.')).finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, [user.id]);
 
-        setBranches(b.branches || []);
-        setSemesters(s.semesters || []);
-        setSections(sec.sections || []);
-      } catch (error) {
-        console.error(error);
-        toast.error('Failed to load filter data');
-      }
-    };
-
-    loadData();
-  }, []);
-
-  // Load subjects when branch + semester changes
-  useEffect(() => {
-    if (!filters.branchId || !filters.semesterId) {
-      setSubjects([]);
-      return;
-    }
-
-    const loadSubjects = async () => {
-      try {
-        const data = await teacherApi.getSubjects(
-          filters.branchId,
-          filters.semesterId
-        );
-
-        setSubjects(data.subjects || []);
-      } catch (error) {
-        console.error(error);
-        setSubjects([]);
-        toast.error('Failed to load subjects');
-      }
-    };
-
-    loadSubjects();
-  }, [filters.branchId, filters.semesterId]);
-
-  const handleChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-
-
-    if (
-      field === 'branchId' ||
-      field === 'semesterId' ||
-      field === 'section'||
-    field === 'subjectId' ||
-    field === 'date'
-    ) {
-      setStudents([]);
-      setMarks({});
-    }
-
-    if (
-      field === 'branchId' ||
-      field === 'semesterId'
-    ) {
-      setFilters(prev => ({
-        ...prev,
-        [field]: value,
-        subjectId: '',
-      }));
-    }
-  };
-
- const loadStudents = async () => {
-  if (
-    !filters.branchId ||
-    !filters.semesterId ||
-    !filters.section ||
-    !filters.subjectId
-  ) {
-    toast.warning('Please select all required fields');
-    return;
-  }
-
-  try {
-    setLoading(true);
-  
-    // 1. Load students
-    const data = await teacherApi.getStudents(
-      filters.branchId,
-      filters.semesterId,
-      filters.section
-    );
-
-    const studentsList = data.students || [];
-
-    setStudents(studentsList);
-
-    // 2. Initially keep marks empty
-    const initialMarks = {};
-
-    studentsList.forEach(student => {
-      initialMarks[student.id] = '';
-    });
-
-    // 3. Check if marks already exist for selected date
-    const marksData = await teacherApi.getExistingMarks({
-      branchId: filters.branchId,
-      semesterId: filters.semesterId,
-      section: filters.section,
-      subjectId: filters.subjectId,
-      date: filters.date
-    });
-
-    // 4. Put existing marks into input boxes
-    if (marksData.markSession?.assessments) {
-      marksData.markSession.assessments.forEach(assessment => {
-        initialMarks[assessment.studentId] = String(assessment.marks);
-      });
-    }
-
-    setMarks(initialMarks);
-
-  } catch (error) {
-    console.error(error);
-
-    toast.error(
-      error.response?.data?.message ||
-      'Failed to load students'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const handleMarkChange = (studentId, value) => {
-    if (value === '') {
-      setMarks(prev => ({
-        ...prev,
-        [studentId]: '',
-      }));
-      return;
-    }
-
-    const number = Number(value);
-
-    if (number < 0 || number > 10) return;
-
-    setMarks(prev => ({
-      ...prev,
-      [studentId]: value,
-    }));
-  };
-
-  const submitMarks = async () => {
-    const isValid = Object.values(marks).every(value => value >= 0 && value <= 10);
-    if (!isValid) {
-      setError('All marks must be between 0 and 10.');
-      return;
-    }
-
-    const incomplete = students.some(
-      student =>
-        marks[student.id] === '' ||
-        marks[student.id] === undefined
-    );
-
-    if (incomplete) {
-      toast.warning('Please enter marks for all students');
-      return;
-    }
-
+  const searchSession = async () => {
+    if (!selectedGroup || !date) { toast.warning('Select a subject group and assessment date.'); return; }
+    setSearching(true);
+    setHasSearched(false);
+    setAlreadySubmitted(false);
+    const initialMarks = initializeMarks(selectedGroup.students);
     try {
-      setLoading(true);
-      
-
-      const payload = {
-        teacherId: 1,
-        subjectId: Number(filters.subjectId),
-        branchId: Number(filters.branchId),
-        section: filters.section,
-        date: filters.date,
-
-        marks: students.map(student => ({
-          studentId: student.id,
-          marks: Number(marks[student.id]),
-        })),
-      };
-
-      const data = await teacherApi.submitMarks(payload);
-
-      toast.success(
-        data.message || 'Marks submitted successfully'
-      );
-
-      setStudents([]);
-      setMarks({});
+      const response = await teacherApi.getExistingMarks({ subjectId: selectedGroup.subject.id, subjectGroupId: selectedGroup.group.id, date });
+      (response.markSession?.assessments || []).forEach(assessment => {
+        if (initialMarks[assessment.studentId]) for (const skill of SKILLS) initialMarks[assessment.studentId][skill.key] = assessment[skill.key] == null ? '' : String(assessment[skill.key]);
+      });
+      setMarks(initialMarks);
+      setAlreadySubmitted(true);
+      toast.success('Existing marks loaded for this session.');
     } catch (error) {
-      console.error(error);
-
-      setError('Failed to submit marks. Please try again.');
-    } finally {
-      setLoading(false);
+      if (error.response?.status === 404) setMarks(initialMarks);
+      else {
+        toast.error(error.response?.data?.message || 'Could not load this session.');
+        setSearching(false);
+        return;
+      }
     }
+    setHasSearched(true);
+    setSearching(false);
   };
 
-  return (
-    <div className="space-y-6">
+  const completion = useMemo(() => {
+    const all = Object.values(marks).flatMap(student => Object.values(student));
+    return { done: all.filter(value => value !== '').length, total: all.length };
+  }, [marks]);
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Teacher Dashboard</CardTitle>
-        </CardHeader>
+  const updateMark = (studentId, skill, value) => {
+    if (value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 10)) return;
+    setMarks(current => ({ ...current, [studentId]: { ...current[studentId], [skill]: value } }));
+  };
 
-        <CardContent>
+  const submit = async () => {
+    if (!selectedGroup) return;
+    const students = selectedGroup.students;
+    const incomplete = students.some(student => SKILLS.some(skill => marks[student.id]?.[skill.key] === ''));
+    if (incomplete) { toast.warning('Enter all four skill marks for every student.'); return; }
+    setSubmitting(true);
+    try {
+      const response = await teacherApi.submitMarks({
+        teacherId: Number(user.id), subjectId: selectedGroup.subject.id, subjectGroupId: selectedGroup.group.id, date,
+        marks: students.map(student => ({ studentId: student.id, ...Object.fromEntries(SKILLS.map(skill => [skill.key, Number(marks[student.id][skill.key])])) })),
+      });
+      if (response.alreadyExists) { setAlreadySubmitted(true); toast.warning(response.message || 'Marks were already submitted for this date.'); }
+      else { setAlreadySubmitted(true); toast.success(response.message || 'Marks submitted successfully.'); }
+    } catch (error) {
+      toast.error(axios.isAxiosError(error) ? (error.response?.data?.message || 'Could not submit marks.') : 'Could not submit marks.');
+    } finally { setSubmitting(false); }
+  };
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-
-            {/* Branch */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Branch
-              </label>
-
-              <Select
-                value={filters.branchId}
-                onChange={e =>
-                  handleChange('branchId', e.target.value)
-                }
-              >
-                <SelectOption value="">
-                  Select Branch
-                </SelectOption>
-
-                {branches.map(branch => (
-                  <SelectOption
-                    key={branch.id}
-                    value={branch.id}
-                  >
-                    {branch.name}
-                  </SelectOption>
-                ))}
-              </Select>
-            </div>
-
-            {/* Semester */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Semester
-              </label>
-
-              <Select
-                value={filters.semesterId}
-                onChange={e =>
-                  handleChange('semesterId', e.target.value)
-                }
-              >
-                <SelectOption value="">
-                  Select Semester
-                </SelectOption>
-
-                {semesters.map(semester => (
-                  <SelectOption
-                    key={semester.id}
-                    value={semester.id}
-                  >
-                    Semester {semester.number}
-                  </SelectOption>
-                ))}
-              </Select>
-            </div>
-
-            {/* Section */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Section
-              </label>
-
-              <Select
-                value={filters.section}
-                onChange={e =>
-                  handleChange('section', e.target.value)
-                }
-              >
-                <SelectOption value="">
-                  Select Section
-                </SelectOption>
-
-                {sections.map(section => (
-                  <SelectOption
-                    key={section}
-                    value={section}
-                  >
-                    {section}
-                  </SelectOption>
-                ))}
-              </Select>
-            </div>
-
-            {/* Subject */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Subject
-              </label>
-
-              <Select
-                value={filters.subjectId}
-                onChange={e =>
-                  handleChange('subjectId', e.target.value)
-                }
-                disabled={
-                  !filters.branchId ||
-                  !filters.semesterId
-                }
-              >
-                <SelectOption value="">
-                  Select Subject
-                </SelectOption>
-
-                {subjects.map(subject => (
-                  <SelectOption
-                    key={subject.id}
-                    value={subject.id}
-                  >
-                    {subject.name}
-                  </SelectOption>
-                ))}
-              </Select>
-            </div>
-
-            {/* Date */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Date
-              </label>
-
-              <input
-                type="date"
-                value={filters.date}
-                onChange={e =>
-                  handleChange('date', e.target.value)
-                }
-                className="w-full h-10 rounded-md border px-3"
-              />
-            </div>
-
-          </div>
-
-          <Button
-            onClick={loadStudents}
-            disabled={loading}
-            className="mt-5"
-          >
-            {loading ? 'Loading...' : 'Load Students'}
-          </Button>
-
-        </CardContent>
-      </Card>
-
-      
-
-      {students.length > 0 && (
-        <Card>
-
-          <CardHeader>
-            <CardTitle>Enter Marks</CardTitle>
-          </CardHeader>
-
-          <CardContent>
-
-            <Table>
-
-              <TableHeader>
-                <TableRow>
-                  <TableHead>UID</TableHead>
-                  <TableHead>Student Name</TableHead>
-                  <TableHead>Marks</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-
-                {students.map(student => (
-                  <TableRow key={student.id}>
-
-                    <TableCell>
-                      {student.uid}
-                    </TableCell>
-
-                    <TableCell>
-                      {student.name}
-                    </TableCell>
-
-                    <TableCell>
-
-                      <input
-                        type="number"
-                        min="0"
-                        max="10"
-                        step="0.5"
-                        value={marks[student.id] ?? ''}
-                        onChange={e =>
-                          handleMarkChange(
-                            student.id,
-                            e.target.value
-                          )
-                        }
-                        className="w-24 h-9 border rounded-md px-2"
-                      />
-
-                    </TableCell>
-
-                  </TableRow>
-                ))}
-
-              </TableBody>
-
-            </Table>
-
-            {error && <p className="text-red-500">{error}</p>}
-
-            <Button
-              onClick={submitMarks}
-              disabled={loading}
-              className="mt-5"
-            >
-              {loading ? 'Submitting...' : 'Submit Marks'}
-            </Button>
-
-          </CardContent>
-
-        </Card>
-      )}
-
-    </div>
-  );
-};
-
-export default TeacherDashboard;
+  return <div className="dashboard-shell">
+    <header className="app-header"><a className="header-brand" href="/teacher-dashboard"><span className="brand-mini">CM</span><span>College Marks<span className="brand-sub">Academic workspace</span></span></a><div className="header-user"><div className="avatar">{user.name?.slice(0, 1).toUpperCase()}</div><div className="user-meta"><strong>{user.name}</strong><span>Teacher</span></div><button className="logout-button" onClick={onLogout}>Sign out</button></div></header>
+    <main className="dashboard-main">
+      <div className="page-intro"><div><p className="eyebrow">TEACHER WORKSPACE</p><h1>Record student marks</h1></div></div>
+      <section className="panel selection-panel"><div className="section-heading"><div><h2>Choose a group and session</h2><p>Your subject and student groups are managed by your academic administrator.</p></div><span className="step-number">01</span></div>
+        <div className="filters-grid"><label className="field-label">Assigned subject group<select value={groupId} onChange={e => { setGroupId(e.target.value); setHasSearched(false); setAlreadySubmitted(false); }} disabled={loading || !groups.length}><option value="">{loading ? 'Loading assigned groups…' : 'Select a group'}</option>{groups.map(item => <option key={item.group.id} value={item.group.id}>{item.subject.name} · {item.group.name} · Section {item.group.section}</option>)}</select></label><label className="field-label">Assessment date<input type="date" value={date} onChange={e => { setDate(e.target.value); setHasSearched(false); setAlreadySubmitted(false); }} /></label></div>
+        {selectedGroup && <div className="group-meta"><span><b>Subject</b>{selectedGroup.subject.name}</span><span><b>Academic period</b>{selectedGroup.academicPeriod.academicYear} · {selectedGroup.academicPeriod.term}</span><span><b>Batch / Section</b>{selectedGroup.group.batch} · {selectedGroup.group.section}</span><span><b>Students</b>{selectedGroup.students.length}</span></div>}
+        <div className="form-action"><button className="primary-button" type="button" onClick={searchSession} disabled={loading || searching || !selectedGroup}>{searching ? 'Searching…' : 'Search'}<span aria-hidden="true">⌕</span></button></div>
+      </section>
+      {selectedGroup && hasSearched && <section className="panel marks-panel"><div className="section-heading"><div><div className="title-row"><h2>Student marks</h2>{alreadySubmitted && <span className="submitted-tag">Already submitted</span>}</div></div><span className="step-number">02</span></div>
+        <div className="table-scroll"><table className="marks-table"><thead><tr><th>Student</th><th>UID</th>{SKILLS.map(skill => <th key={skill.key}>{skill.label}<small> / 10</small></th>)}</tr></thead><tbody>{selectedGroup.students.map(student => <tr key={student.id}><td className="student-name">{student.name}</td><td className="student-uid">{student.uid}</td>{SKILLS.map(skill => <td key={skill.key}><input aria-label={`${skill.label} marks for ${student.name}`} type="number" min="0" max="10" step="0.5" value={marks[student.id]?.[skill.key] ?? ''} disabled={alreadySubmitted || submitting} onChange={e => updateMark(student.id, skill.key, e.target.value)} placeholder="—" /></td>)}</tr>)}</tbody></table></div>
+        <div className="submit-row"><div className="progress-copy"><strong>{completion.done} of {completion.total}</strong> marks entered</div><button className="primary-button" onClick={submit} disabled={submitting || alreadySubmitted || !selectedGroup.students.length}>{submitting ? 'Submitting…' : alreadySubmitted ? 'Submitted for this date' : 'Submit marks'}<span aria-hidden="true">→</span></button></div>
+      </section>}
+      {!loading && !groups.length && <section className="empty-state"><div className="empty-icon">↗</div><h2>No groups assigned</h2><p>When an administrator assigns a subject group to you, it will appear here.</p></section>}
+      <footer className="page-footer">College Marks System <span>•</span> Academic records workspace</footer>
+    </main>
+  </div>;
+}

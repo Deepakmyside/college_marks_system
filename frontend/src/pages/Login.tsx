@@ -1,45 +1,51 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'sonner';
+import api from '../api/client';
 
-const Login = () => {
+export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     try {
-      const response = await axios.post('/api/auth/login', { username, password });
-      // Assuming the response contains a JWT token
-      const token = response.data.token;
-      // Store token securely (preferably in HttpOnly cookie)
-      // Redirect to the appropriate dashboard based on role
-      navigate(response.data.role === 'TEACHER' ? '/teacher-dashboard' : '/hod-dashboard');
-    } catch (err) {
-      console.error('Login error:', err); // Log the error for debugging
-      setError('Invalid credentials, please try again.');
-    }
+      const { data } = await api.post('/api/auth/login', { username: username.trim(), password });
+      if (!data?.token || !data?.user?.role) throw new Error('The server returned an incomplete login response.');
+      if (!['TEACHER', 'HOD'].includes(data.user.role)) throw new Error('This account does not have dashboard access.');
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      onLogin(data.user);
+      toast.success(`Welcome, ${data.user.name}`);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data?.message || (error.code === 'ECONNABORTED' || !error.response ? 'Cannot reach the server. Check that the API is running and try again.' : 'Unable to sign in. Check your credentials and try again.'))
+        : error.message || 'Unable to sign in.';
+      toast.error(message);
+    } finally { setSubmitting(false); }
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Login</h2>
-        {error && <p className="text-red-500">{error}</p>}
-        <div className="mb-4">
-          <label className="block mb-2">Username</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-2 border" required />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border" required />
-        </div>
-        <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">Login</button>
+  return <main className="login-shell">
+    <section className="login-aside">
+      <div className="brand-mark">CM</div>
+      <p className="eyebrow">ACADEMIC PERFORMANCE</p>
+      <h1>Every student’s progress, clearly in view.</h1>
+      <p className="aside-copy">A focused workspace for teachers and academic leaders to record and review student outcomes.</p>
+      <div className="aside-foot"><span className="status-dot" /> Academic workspace</div>
+    </section>
+    <section className="login-panel">
+      <form className="login-form" onSubmit={handleSubmit}>
+        <div className="form-heading"><p className="eyebrow">WELCOME BACK</p><h2>Sign in to your account</h2><p>Use the username and password provided by your institution.</p></div>
+        <label htmlFor="username">Username</label>
+        <input id="username" autoComplete="username" autoFocus value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter your username" required />
+        <label htmlFor="password">Password</label>
+        <input id="password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required />
+        <button className="login-submit" type="submit" disabled={submitting}>{submitting ? <><span className="button-spinner" /> Signing in…</> : 'Sign in'}<span aria-hidden="true">→</span></button>
+        <p className="secure-note"><span aria-hidden="true">◆</span> Secure access for authorised staff</p>
       </form>
-    </div>
-  );
-};
-
-export default Login;
+    </section>
+  </main>;
+}
