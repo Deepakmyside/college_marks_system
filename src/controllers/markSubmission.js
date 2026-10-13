@@ -22,15 +22,6 @@ const markSubmission = async (req, res) => {
             });
         }
 
-        // Validate 2: marks must be a non-empty array
-
-        if(!Array.isArray(marks) || marks.length === 0 ) {
-            return res.status(400).json({
-                success: false,
-                message: "marks must  be a non-empty array"
-            });
-        }
-
 const skillFields = [
     "communicationSkills",
     "technicalSkills",
@@ -68,11 +59,15 @@ const group = await prisma.subjectGroup.findUnique({
     where: {
         id: Number(subjectGroupId)
     },
-    include: {
-        subject: true,
-        academicPeriod: true,
-        students: true
-    }
+   include: {
+    subject: {
+        include: {
+            semester: true
+        }
+    },
+    academicPeriod: true,
+    students: true
+}
 });
 
 if (!group) {
@@ -87,6 +82,35 @@ if (group.subjectId !== Number(subjectId)) {
     return res.status(400).json({
         success: false,
         message: "Subject does not match the assigned group"
+    });
+}
+
+
+// Calculate the semester based on the student's batch and date
+const firstStudent = await prisma.student.findUnique({
+    where: {
+        id: Number(marks[0].studentId)
+    }
+});
+
+if (!firstStudent) {
+    return res.status(400).json({
+        success: false,
+        message: "Student not found"
+    });
+}
+
+const currentSemesterNumber = await getCurrentSemester(
+    prisma,
+    firstStudent.batch,
+    new Date(date)
+);
+
+// Check whether the group belongs to the current semester
+if (group.subject.semester.number !== currentSemesterNumber) {
+    return res.status(400).json({
+        success: false,
+        message: `This student belongs to Semester ${currentSemesterNumber}, but the selected group belongs to Semester ${group.subject.semester.number}`
     });
 }
 
@@ -143,10 +167,11 @@ const existing = await prisma.markSession.findFirst({
     }
 });
 if (existing) {
-    return res.status(409).json({
-        success: false,
-        message: "Marks session already exists for this group and date",
-        markSessionId: existing.id
+    return res.status(200).json({
+        success: true,
+        alreadyExists: true,
+        message: "Marks already submitted for this session",
+        markSession: existing
     });
 }
     
@@ -201,19 +226,13 @@ if (existing) {
 
 const getMarks = async (req, res) => {
     try {
-        const {
-            subjectId,
-            branchId,
-            semesterId,
-            section,
-            date
-        } = req.query;
+        const { subjectId, subjectGroupId, date } = req.query;
 
-        if( !subjectId || !branchId || !semesterId || !section || !date ){
-            return res.status(400).json ({
+        // Validation
+        if (!subjectId || !subjectGroupId || !date) {
+            return res.status(400).json({
                 success: false,
-                message:   "All query params required: subjectId, branchId, semesterId, section, date"
-            
+                message: "subjectId, subjectGroupId and date are required"
             });
         }
 
@@ -221,13 +240,9 @@ const getMarks = async (req, res) => {
         const markSession = await prisma.markSession.findFirst({
             where: {
                 subjectId: Number(subjectId),
-                branchId: Number(branchId),
-                semesterId: Number(semesterId),
-                section: section,
+                subjectGroupId: Number(subjectGroupId),
                 date: new Date(date)
             },
-            // Also bring  assessments and students
-
             include: {
                 assessments: {
                     include: {
@@ -237,20 +252,25 @@ const getMarks = async (req, res) => {
             }
         });
 
-// send existing marks
+        // 404 if not found
+        if (!markSession) {
+            return res.status(404).json({
+                success: false,
+                message: "No marks found for this session"
+            });
+        }
 
         res.status(200).json({
             success: true,
             markSession
         });
 
-    } catch(error) {
+    } catch (error) {
         console.error(error);
-        
-        res.status(500).json ({
+        res.status(500).json({
             success: false,
-            message: "Failed to fetch marks"
-        })
+                message: "Failed to fetch marks"
+        });
     }
 }
 

@@ -9,6 +9,7 @@ const markRoutes = require("./routes/markRoutes")
 const hodRoutes = require("./routes/hodRoutes");
 const lookupRoutes = require("./routes/lookupRoutes");
 const teacherStudentsRoutes = require("./routes/teacherStudentsRoutes")
+const { scheduleAcademicPeriods } = require("./services/academicPeriod.service")
 app.use(cors());
 
 app.use(express.json());
@@ -18,7 +19,7 @@ app.get("/", (req, res) => {
         messsage: "collage Marks System API is running"
     });
 });
-
+scheduleAcademicPeriods()
 app.use("/api/students", studentRoutes)
 app.use("/api/subjects",subjectRoutes)
 app.use("/api/marks", markRoutes)

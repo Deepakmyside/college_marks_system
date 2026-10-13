@@ -1,6 +1,6 @@
 const getCurrentSemester = async (prisma, batch, date = new Date())  => {
     // Find the academic period in which this date falls 
-    const periods = await prisma.academicPeriod.findMany({
+    const periods = await prisma.academicPeriod.findFirst({
         where: {
             startDate: {
                 lte: date
