@@ -1,10 +1,8 @@
 
 const express = require("express");
 const authenticateToken = require("../middleware/auth.middleware");
-const {
-  getStudents,
-  getStudentSummary,
-} = require("../controllers/studentController");
+const {getStudents} = require("../controllers/studentController");
+const {getStudentSummary} = require("../controllers/studentSummary")
 
 const router = express.Router();
 

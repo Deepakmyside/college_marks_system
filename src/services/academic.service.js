@@ -13,12 +13,24 @@ const getCurrentSemester = async (prisma, batch, date = new Date())  => {
     });
    
     // No academic period means collage calendar is missing
-    if(periods.length === 0 ) {
-        throw new Error("No academic period found for this date");
-     }
+   
+const period = await prisma.academicPeriod.findFirst({
+  where: {
+    startDate: {
+      lte: date,
+    },
+    endDate: {
+      gte: date,
+    },
+  },
+});
 
-    // we expect only one activeacademic period
-    const period = periods[0];
+if (!period) {
+  throw new Error("No academic period found for this date");
+}
+
+console.log("Academic period:", period);
+
     console.log("Academic period:", period);
 
 
