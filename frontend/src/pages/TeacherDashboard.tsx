@@ -41,7 +41,7 @@ const TeacherDashboard = () => {
 
   const [marks, setMarks] = useState({});
   const [loading, setLoading] = useState(false);
-
+  const [error, setError] = useState('');
 
   // Load dropdown data
   useEffect(() => {
@@ -202,6 +202,12 @@ const TeacherDashboard = () => {
   };
 
   const submitMarks = async () => {
+    const isValid = Object.values(marks).every(value => value >= 0 && value <= 10);
+    if (!isValid) {
+      setError('All marks must be between 0 and 10.');
+      return;
+    }
+
     const incomplete = students.some(
       student =>
         marks[student.id] === '' ||
@@ -241,10 +247,7 @@ const TeacherDashboard = () => {
     } catch (error) {
       console.error(error);
 
-      toast.error(
-        error.response?.data?.message ||
-        'Failed to submit marks'
-      );
+      setError('Failed to submit marks. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -462,6 +465,8 @@ const TeacherDashboard = () => {
               </TableBody>
 
             </Table>
+
+            {error && <p className="text-red-500">{error}</p>}
 
             <Button
               onClick={submitMarks}
