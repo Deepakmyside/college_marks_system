@@ -1,5 +1,6 @@
-
 const { PrismaClient } = require("../src/generated/prisma");
+require("dotenv").config();
+const bcyrpt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
@@ -77,49 +78,68 @@ async function main() {
   });
 
   // 4. Users
-  async function upsertUser(name, email, role) {
+  async function upsertUser(name, username, email, role, password) {
+      if (!password) {
+    throw new Error(`Password missing for ${username}`);
+  }
+
+    const passwordHash = await bcyrpt.hash(password, 12);
     return prisma.user.upsert({
       where: { email },
-      update: { name, role },
+      update: {
+        name,
+        username,
+        role,
+        passwordHash
+      },
       create: {
         name,
+        username,
         email,
         role,
-        // Dummy password only. Replace with a real password hash
-        // before using these accounts for authentication.
-        passwordHash: "dummy-password",
-      },
+        passwordHash,
+          },
     });
   }
 
   const rahul = await upsertUser(
     "Rahul Teacher",
+    "rahul",
     "teacher@college.com",
-    "TEACHER"
+    "TEACHER",
+    process.env.SEED_RAHUL_PASSWORD
   );
 
   const hod = await upsertUser(
     "Amit HOD",
+    "amit",
     "hod@college.com",
-    "HOD"
+    "HOD",
+    process.env.SEED_AMIT_PASSWORD
   );
 
   const kashish = await upsertUser(
     "Kashish Garg",
+    "kashish",
     "kashish@college.com",
-    "TEACHER"
+    "TEACHER",
+    process.env.SEED_KASHISH_PASSWORD
   );
 
   const priya = await upsertUser(
     "Priya Sharma",
+    "priya",
     "priya@college.com",
-    "TEACHER"
+    "TEACHER",
+    process.env.SEED_PRIYA_PASSWORD
   );
 
   const neha = await upsertUser(
     "Neha Verma",
+    "neha",
     "neha@college.com",
-    "TEACHER"
+    "TEACHER",
+    process.env.SEED_NEHA_PASSWORD
   );
 
   console.log("Users created.");
@@ -134,7 +154,12 @@ async function main() {
   }) {
     return prisma.student.upsert({
       where: { uid },
-      update: { name, batch, section, branchId },
+      update: {
+        name,
+        batch,
+        section,
+        branchId,
+      },
       create: {
         uid,
         name,
@@ -177,7 +202,6 @@ async function main() {
     branchId: cse.id,
   });
 
-  // Additional students for other subject-specific groups
   const student5 = await upsertStudent({
     uid: "AIML005",
     name: "Simran Kaur",
@@ -226,7 +250,7 @@ async function main() {
     branchId: aiml.id,
   });
 
-  // 6. Subjects: upsert prevents duplicate subjects
+  // 6. Subjects
   async function upsertSubject(name, branchId, semesterId) {
     return prisma.subject.upsert({
       where: {
@@ -237,26 +261,34 @@ async function main() {
         },
       },
       update: {},
-      create: { name, branchId, semesterId },
+      create: {
+        name,
+        branchId,
+        semesterId,
+      },
     });
   }
 
   const dbms = await upsertSubject("DBMS", aiml.id, sem5.id);
+
   const os = await upsertSubject(
     "Operating Systems",
     aiml.id,
     sem5.id
   );
+
   const maths = await upsertSubject(
     "Mathematics",
     aiml.id,
     sem5.id
   );
+
   const physics = await upsertSubject(
     "Physics",
     aiml.id,
     sem5.id
   );
+
   const cseDbms = await upsertSubject(
     "DBMS",
     cse.id,
@@ -332,7 +364,7 @@ async function main() {
   });
 
   // 8. Student-group memberships
-  // One student can belong to only one group per academic period.
+  // A student can belong to only one group per academic period.
   async function addStudentToGroup(student, group) {
     return prisma.subjectGroupStudent.upsert({
       where: {
@@ -352,29 +384,34 @@ async function main() {
     });
   }
 
-  // DBMS group: AIML001, AIML002
+  // DBMS group
   await addStudentToGroup(student1, dbmsGroup);
   await addStudentToGroup(student2, dbmsGroup);
 
-  // OS group: AIML005, AIML006
+  // Operating Systems group
   await addStudentToGroup(student5, osGroup);
   await addStudentToGroup(student6, osGroup);
 
-  // Mathematics group: AIML007, AIML008
+  // Mathematics group
   await addStudentToGroup(student7, mathsGroup);
   await addStudentToGroup(student8, mathsGroup);
 
-  // Physics group: AIML009, AIML010
+  // Physics group
   await addStudentToGroup(student9, physicsGroup);
   await addStudentToGroup(student10, physicsGroup);
 
-  // CSE DBMS group in the EVEN period
+  // CSE DBMS group
   await addStudentToGroup(student4, cseDbmsGroup);
 
   console.log("Subject groups and memberships created.");
 
   // 9. Teacher-subject and teacher-group assignments
-  async function assignTeacherToGroup(teacher, subject, period, group) {
+  async function assignTeacherToGroup(
+    teacher,
+    subject,
+    period,
+    group
+  ) {
     const assignment =
       await prisma.teacherSubjectAssignment.upsert({
         where: {

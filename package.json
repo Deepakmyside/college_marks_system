@@ -6,9 +6,9 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
-   "prisma": {
-  "seed": "node prisma/seed.js"
-},
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Deepakmyside/college_marks_system.git"
@@ -24,6 +24,7 @@
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.0",
     "express": "^5.2.1",
@@ -33,5 +34,4 @@
   "devDependencies": {
     "nodemon": "^3.1.14"
   }
- 
 }

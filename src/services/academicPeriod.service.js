@@ -1,59 +1,59 @@
-const cron = require("node-cron")
-const prisma = require("../config/db")
 
-const createAcademicPeriod = async (term, academicYear, startDate, endDate) => {
-    const existing = await prisma.academicPeriod.findFirst({
-        where: { academicYear, term }
-    })
+// const prisma = require("../config/db")
 
-    if (existing) {
-        console.log(`Academic period ${academicYear} ${term} already exists`)
-        return
-    }
+// const createAcademicPeriod = async (term, academicYear, startDate, endDate) => {
+//     const existing = await prisma.academicPeriod.findFirst({
+//         where: { academicYear, term }
+//     })
 
-    await prisma.academicPeriod.create({
-        data: {
-            academicYear,
-            term,
-            startDate,
-            endDate
-        }
-    })
+//     if (existing) {
+//         console.log(`Academic period ${academicYear} ${term} already exists`)
+//         return
+//     }
 
-    console.log(`Created academic period: ${academicYear} ${term}`)
-}
+//     await prisma.academicPeriod.create({
+//         data: {
+//             academicYear,
+//             term,
+//             startDate,
+//             endDate
+//         }
+//     })
 
-const scheduleAcademicPeriods = () => {
+//     console.log(`Created academic period: ${academicYear} ${term}`)
+// }
 
-    // Runs every year on July 1st at midnight → ODD semester starts
-    cron.schedule("0 0 1 7 *", async () => {
-        const now = new Date()
-        const year = now.getFullYear()
-        const academicYear = `${year}-${year + 1}`
+// const scheduleAcademicPeriods = () => {
 
-        await createAcademicPeriod(
-            "ODD",
-            academicYear,
-            new Date(`${year}-07-01`),
-            new Date(`${year}-12-31`)
-        )
-    })
+//     // Runs every year on July 1st at midnight → ODD semester starts
+//     cron.schedule("0 0 1 7 *", async () => {
+//         const now = new Date()
+//         const year = now.getFullYear()
+//         const academicYear = `${year}-${year + 1}`
 
-    // Runs every year on January 1st at midnight → EVEN semester starts
-    cron.schedule("0 0 1 1 *", async () => {
-        const now = new Date()
-        const year = now.getFullYear()
-        const academicYear = `${year - 1}-${year}`
+//         await createAcademicPeriod(
+//             "ODD",
+//             academicYear,
+//             new Date(`${year}-07-01`),
+//             new Date(`${year}-12-31`)
+//         )
+//     })
 
-        await createAcademicPeriod(
-            "EVEN",
-            academicYear,
-            new Date(`${year}-01-01`),
-            new Date(`${year}-06-30`)
-        )
-    })
+//     // Runs every year on January 1st at midnight → EVEN semester starts
+//     cron.schedule("0 0 1 1 *", async () => {
+//         const now = new Date()
+//         const year = now.getFullYear()
+//         const academicYear = `${year - 1}-${year}`
 
-    console.log("Academic period scheduler running...")
-}
+//         await createAcademicPeriod(
+//             "EVEN",
+//             academicYear,
+//             new Date(`${year}-01-01`),
+//             new Date(`${year}-06-30`)
+//         )
+//     })
 
-module.exports = { scheduleAcademicPeriods }
+//     console.log("Academic period scheduler running...")
+// }
+
+// module.exports = { scheduleAcademicPeriods }
