@@ -1,6 +1,6 @@
 const prisma = require("../config/db")
 const { getBatchForSemester } = require("../services/academic.service");
-const { calculateSubjectAverage, calculateOverallAverage} = require("../services/marks.service") 
+const { calculateAssessmentAverage, calculateSubjectAverage, calculateOverallAverage} = require("../services/marks.service")
 
 const getHodDashboard = async (req, res) => {
     try {
@@ -120,8 +120,11 @@ const getHodDashboard = async (req, res) => {
             date: true,
             assessments: {
                 select: {
-                    studentId: true,
-                    marks: true 
+                studentId: true,
+                    communicationSkills: true,
+                    technicalSkills: true,
+                    behaviouralSkills: true,
+                    softSkills: true
                 }
             }
         },
@@ -151,7 +154,7 @@ const getHodDashboard = async (req, res) => {
             };
         }
 
-        subjectMarks[session.subjectId].marks.push(assessment.marks);
+        subjectMarks[session.subjectId].marks.push(calculateAssessmentAverage(assessment));
     });
 
     const subjectAverages = Object.values(subjectMarks).map((subject) => {
