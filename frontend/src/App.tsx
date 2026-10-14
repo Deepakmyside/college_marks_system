@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import Login from './pages/Login';
 import TeacherDashboard from './pages/TeacherDashboard';
 import HodDashboard from './pages/HodDashboard';
+import StudentSummary from './pages/StudentSummary';
 
 const readUser = () => {
   try {
@@ -25,6 +26,14 @@ export default function App() {
       <Route path="/teacher-dashboard" element={user?.role === 'TEACHER' ? <TeacherDashboard user={user} onLogout={logout} /> : <Navigate to="/" replace />} />
       <Route path="/hod-dashboard" element={user?.role === 'HOD' ? <HodDashboard user={user} onLogout={logout} /> : <Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to={user ? (user.role === 'TEACHER' ? '/teacher-dashboard' : '/hod-dashboard') : '/'} replace />} />
+      <Route
+  path="/student-summary"
+  element={
+    user?.role === 'HOD'
+      ? <StudentSummary />
+      : <Navigate to="/" replace />
+  } 
+/>
     </Routes>
   </BrowserRouter>;
 }

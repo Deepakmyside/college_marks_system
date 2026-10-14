@@ -1,7 +1,7 @@
 const prisma = require("../config/db");
 const { calculateDayAverage,
     calculateSubjectAverage,
-    calculateOverallAverage
+    calculateOverallAverage,calculateAssessmentAverage
 } = require("../services/marks.service");
 
 const getStudentSummary = async (req, res) => {
@@ -71,7 +71,10 @@ const getStudentSummary = async (req, res) => {
                     studentId: student.id 
                 },
                 select: {
-                    marks: true 
+                    communicationSkills: true,
+                    technicalSkills: true,
+                    behaviouralSkills: true,
+                    softSkills:true
                 }
                 }
             },
@@ -101,12 +104,16 @@ const getStudentSummary = async (req, res) => {
 
       if(assessment) {
         const subjectId = session.subject.id;
-        const marks = assessment.marks;
+        const marks = calculateAssessmentAverage(assessment);
 
         summary[date].subjects.push({
             subjectId: session.subject.id,
             subjectName: session.subject.name,
-            marks: assessment.marks
+            communicationSkills: assessment.communicationSkills,
+            softSkills: assessment.softSkills,
+            behaviouralSkills: assessment.behaviouralSkills,
+            technicalSkills: assessment.technicalSkills,
+            marks
         });
 
         if(!subjectMarks[subjectId]) {

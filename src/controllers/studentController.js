@@ -77,4 +77,4 @@ const getStudents = async (req, res) => {
     }
 };
 
-module.exports = { getStudents,}
+module.exports = { getStudents }

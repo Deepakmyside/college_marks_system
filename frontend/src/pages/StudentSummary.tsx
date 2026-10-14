@@ -147,62 +147,77 @@ const StudentSummary = () => {
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
-                   <TableHeader>
+                  <TableHeader>
   <TableRow>
     <TableHead>Date</TableHead>
-
-    {summaryData.subjectAverages.map(subject => (
-      <TableHead key={subject.subjectId}>
-        {subject.subjectName}
-      </TableHead>
-    ))}
-
-    <TableHead className="text-right">
-      Day Average
-    </TableHead>
+    <TableHead>Communication Skills</TableHead>
+    <TableHead>Technical Skills</TableHead>
+    <TableHead>Behavioural Skills</TableHead>
+    <TableHead>Soft Skills</TableHead>
+    <TableHead className="text-right">Day Average</TableHead>
   </TableRow>
 </TableHeader>
 
 <TableBody>
-  {summaryData.summary.map((day, index) => (
-    <TableRow key={`${day.date}-${index}`}>
-      <TableCell className="font-medium">
-        {day.date}
-      </TableCell>
+  {summaryData.summary.map((day, index) => {
+    const subject = day.subjects[0];
 
-      {summaryData.subjectAverages.map(subject => {
-        const subjectData = day.subjects.find(
-          s => s.subjectId === subject.subjectId
-        );
+    return (
+      <TableRow key={`${day.date}-${index}`}>
+        <TableCell className="font-medium">
+          {day.date}
+        </TableCell>
 
-        return (
-          <TableCell key={subject.subjectId}>
-            {subjectData?.marks ?? '-'}
-          </TableCell>
-        );
-      })}
+        <TableCell>{subject?.communicationSkills ?? '-'}</TableCell>
+        <TableCell>{subject?.technicalSkills ?? '-'}</TableCell>
+        <TableCell>{subject?.behaviouralSkills ?? '-'}</TableCell>
+        <TableCell>{subject?.softSkills ?? '-'}</TableCell>
 
-      <TableCell className="text-right font-medium">
-        {day.dayAverage !== undefined
-          ? day.dayAverage.toFixed(2)
-          : '-'}
-      </TableCell>
-    </TableRow>
-  ))}
+        <TableCell className="text-right font-medium">
+          {day.dayAverage !== undefined
+            ? day.dayAverage.toFixed(2)
+            : '-'}
+        </TableCell>
+      </TableRow>
+    );
+  })}
 </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell className="font-medium">Subject Average</TableCell>
-                        {summaryData.subjectAverages.map(subject => (
-                          <TableCell key={subject.subjectId} className="font-medium">
-                            {subject.average !== undefined ? subject.average.toFixed(2) : '-'}
-                          </TableCell>
-                        ))}
-                        <TableCell className="text-right font-medium">
-                          {summaryData.overallAverage !== undefined ? summaryData.overallAverage.toFixed(2) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
+                  <TableFooter>
+  <TableRow>
+    <TableCell className="font-medium">
+      Skill Average
+    </TableCell>
+
+    {[
+      'communicationSkills',
+      'technicalSkills',
+      'behaviouralSkills',
+      'softSkills'
+    ].map(skill => {
+      const marks = summaryData.summary.flatMap(day =>
+        day.subjects
+          .map(subject => subject[skill])
+          .filter(mark => typeof mark === 'number' && Number.isFinite(mark))
+      );
+
+      const average = marks.length
+        ? marks.reduce((sum, mark) => sum + mark, 0) / marks.length
+        : null;
+
+      return (
+        <TableCell key={skill} className="font-medium">
+          {average !== null ? average.toFixed(2) : '-'}
+        </TableCell>
+      );
+    })}
+
+    <TableCell className="text-right font-medium">
+      {summaryData.overallAverage !== undefined
+        ? summaryData.overallAverage.toFixed(2)
+        : '-'}
+    </TableCell>
+  </TableRow>
+</TableFooter>
                   </Table>
                 </div>
               </CardContent>
