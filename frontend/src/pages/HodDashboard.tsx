@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { hodApi } from '../api/hodApi';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 export default function HodDashboard({ user, onLogout }) {
   const [branches, setBranches] = useState([]);
@@ -14,6 +14,7 @@ export default function HodDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
 const Navigate = useNavigate();
+const location = useLocation();
   useEffect(() => {
     Promise.all([hodApi.getBranches(), hodApi.getSemesters(), hodApi.getSections()]).then(([b, s, c]) => {
       setBranches(b.branches || []); setSemesters(s.semesters || []); setSections(c.sections || []);
