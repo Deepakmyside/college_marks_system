@@ -84,7 +84,7 @@ const StudentSummary = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="student-summary-page">
       <Button onClick={() => navigate('/', {
         state: {
           dashboardFilters: location.state?.dashboardFilters
@@ -103,31 +103,32 @@ const StudentSummary = () => {
 
       {summaryData && (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Information</CardTitle>
+          <Card className="summary-info-card">
+            <CardHeader className="summary-info-heading">
+              <div><p className="summary-eyebrow">STUDENT PROFILE</p><CardTitle className="summary-person-name">{summaryData.student.name}</CardTitle></div>
+              <span className="summary-semester-badge">Semester {summaryData.semester}</span>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-medium">{summaryData.student.name}</p>
+            <CardContent className="summary-info-content">
+              <div className="summary-facts-grid">
+                <div className="summary-fact">
+                  <p className="summary-key">Name</p>
+                  <p className="summary-value summary-person-value">{summaryData.student.name}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">UID</p>
-                  <p className="font-medium">{summaryData.student.uid}</p>
+                <div className="summary-fact">
+                  <p className="summary-key">Student ID</p>
+                  <p className="summary-value summary-id-value">{summaryData.student.uid}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Batch</p>
-                  <p className="font-medium">{summaryData.student.batch}</p>
+                <div className="summary-fact">
+                  <p className="summary-key">Batch</p>
+                  <p className="summary-value">{summaryData.student.batch}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Section</p>
-                  <p className="font-medium">{summaryData.student.section}</p>
+                <div className="summary-fact">
+                  <p className="summary-key">Section</p>
+                  <p className="summary-value">{summaryData.student.section}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Semester </p>
-                  <p className="font-medium">{summaryData.semester}</p>
+                <div className="summary-fact">
+                  <p className="summary-key">Semester</p>
+                  <p className="summary-value">{summaryData.semester}</p>
                 </div>
               </div>
             </CardContent>
@@ -140,13 +141,14 @@ const StudentSummary = () => {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Detailed Marks</CardTitle>
+            <Card className="summary-marks-card">
+              <CardHeader className="summary-marks-heading">
+                <div><p className="summary-eyebrow">ASSESSMENT HISTORY</p><CardTitle>Detailed marks</CardTitle></div>
+                <span className="summary-record-count">{summaryData.summary.length} {summaryData.summary.length === 1 ? 'assessment' : 'assessments'}</span>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="summary-table">
                   <TableHeader>
   <TableRow>
     <TableHead>Date</TableHead>
