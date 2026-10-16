@@ -30,21 +30,20 @@ export default function Login({ onLogin }) {
 
   return <main className="login-shell">
     <section className="login-aside">
-      <div className="brand-mark">CM</div>
-      <p className="eyebrow">ACADEMIC PERFORMANCE</p>
-      <h1>Every student’s progress, clearly in view.</h1>
-      <p className="aside-copy">A focused workspace for teachers and academic leaders to record and review student outcomes.</p>
-      <div className="aside-foot"><span className="status-dot" /> Academic workspace</div>
+      <div className="brand-mark">BF</div>
+      <p className="eyebrow">BFCET</p>
+      <h1>Marks Assessment Workspace</h1>
+      <p className="aside-copy">BFCET Marks Assessment System</p>
+      <div className="aside-foot"><span className="status-dot" /> BFCET</div>
     </section>
     <section className="login-panel">
       <form className="login-form" onSubmit={handleSubmit}>
-        <div className="form-heading"><p className="eyebrow">WELCOME BACK</p><h2>Sign in to your account</h2><p>Use the username and password provided by your institution.</p></div>
+        <div className="form-heading"><p className="eyebrow">BFCET MARKS ASSESSMENT SYSTEM</p><h2>Sign in</h2></div>
         <label htmlFor="username">Username</label>
         <input id="username" autoComplete="username" autoFocus value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter your username" required />
         <label htmlFor="password">Password</label>
         <input id="password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required />
         <button className="login-submit" type="submit" disabled={submitting}>{submitting ? <><span className="button-spinner" /> Signing in…</> : 'Sign in'}<span aria-hidden="true">→</span></button>
-        <p className="secure-note"><span aria-hidden="true">◆</span> Secure access for authorised staff</p>
       </form>
     </section>
   </main>;

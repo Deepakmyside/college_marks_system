@@ -11,7 +11,7 @@ const DashboardLayout = ({ children }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-[#0F172A]">
-                College Marks System
+                BFCET Marks Assessment System
               </h1>
             </div>
             <nav className="flex space-x-4">
